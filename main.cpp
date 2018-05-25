@@ -27,6 +27,7 @@ using namespace std;
 #include <stdlib.h>
 #include <string.h>
 #include <chrono>
+#include "cube_data.h"
 
 
 
@@ -57,33 +58,20 @@ public:
     }
 };
 
-struct RGBVal{
-    float r;
-    float b;
-    float g;
-    void buffer_colors(std::vector<float> & color_buffer){
-        color_buffer.push_back(r);
-        color_buffer.push_back(g);
-        color_buffer.push_back(b);
-    }
-};
-struct CubeData{
+
+/*struct CubeData{
     RGBVal color;
     CubeCoord coord;
 };
-void add_cube_colors(RGBVal color, std::vector<float> & color_buffer){
-    for(int i = 0; i < verticies_per_cube; i++){
-        color.buffer_colors(color_buffer);
-    }
-}
 void add_cube(CubeData cube, std::vector<float> & color_buffer, std::vector<float> & vertex_buffer){
     add_cube_colors(cube.color,color_buffer);
     add_cube_vertex(cube.coord,vertex_buffer);
-}
+}*/
 
 int main( void )
 {
     setup_window();
+    //glDepthFunc(GL_LESS);
     // Dark blue background
     glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
@@ -101,16 +89,6 @@ int main( void )
          1.0f, -1.0f, 0.0f,
          0.0f,  1.0f, 0.0f,
     };*/
-    vector<float> cube_verticies;
-    vector<float> cube_colors;
-    for(int i = 0; i < 300; i++){
-        for(int j = 0; j < 300; j++){
-            CubeCoord coord{0,i,j};
-            RGBVal color{rand()/37000.0f,rand()/37000.0f,rand()/37000.0f};
-            CubeData data{color,coord};
-            add_cube(data,cube_colors,cube_verticies);
-        }
-    }
     /*for(int i = 0; i < 12; i++){
         for(int j = 0; j < 3; j++){
             for(int k = 0; k < 3; k++){
@@ -138,21 +116,44 @@ int main( void )
 	glm::mat4 MVP        = Projection * View * Model; // Remember, matrix multiplication is the other way around
 
 
+    CubeData all_cubes;
+
     GLuint vertexbuffer;
     glGenBuffers(1, &vertexbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*cube_verticies.size(), cube_verticies.data(), GL_STATIC_DRAW);
 
 	GLuint colorbuffer;
 	glGenBuffers(1, &colorbuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*cube_colors.size(), cube_colors.data(), GL_STATIC_DRAW);
 
     FrameRateControl count;
     do{
+        vector<BYTE> cube_colors;
+        vector<float> cube_verticies;
+        cout << "megama" << endl;
+
+        vector<FaceDrawInfo> draw_info = all_cubes.get_exposed_faces();
+        cout << "arlkajsd" << endl;
+        for(FaceDrawInfo & info : draw_info){
+            info.add_to_buffer(cube_colors,cube_verticies);
+        }
+        cout << draw_info.size() << endl;
+        //cout <<
+
+        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float)*cube_verticies.size(), cube_verticies.data(), GL_STREAM_DRAW);
+
+    	glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+    	glBufferData(GL_ARRAY_BUFFER, sizeof(BYTE)*cube_colors.size(), cube_colors.data(), GL_STREAM_DRAW);
+
+        //sleeps when frame was recently rendered to prevent spinning
         count.render_pause();
+
         // Clear the screen
         glClear( GL_COLOR_BUFFER_BIT );
+
+        // enables depth buffer correctly.
+        glClear(GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
 
         // Use our shader
         glUseProgram(programID);
@@ -175,9 +176,9 @@ int main( void )
 		glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
 		glVertexAttribPointer(
 			vertexColorID,               // The attribute we want to configure
-			3,                           // size
-			GL_FLOAT,                    // type
-			GL_FALSE,                    // normalized?
+			4,                           // size
+			GL_UNSIGNED_BYTE,                    // type
+			GL_TRUE,                    // normalized?
 			0,                           // stride
 			(void*)0                     // array buffer offset
 		);
@@ -191,6 +192,7 @@ int main( void )
         // Swap buffers
         glfwSwapBuffers(window);
         glfwPollEvents();
+    	glDeleteBuffers(1, &colorbuffer);
 
     } // Check if the ESC key was pressed or the window was closed
     while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
@@ -198,9 +200,8 @@ int main( void )
 
 
     // Cleanup VBO
-    glDeleteBuffers(1, &vertexbuffer);
-	glDeleteBuffers(1, &colorbuffer);
     glDeleteProgram(programID);
+    glDeleteBuffers(1, &vertexbuffer);
 
     // Close OpenGL window and terminate GLFW
     glfwTerminate();

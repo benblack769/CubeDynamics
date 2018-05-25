@@ -1,4 +1,5 @@
 #include <vector>
+#include <cassert>
 #include "cube_coords.h"
 
 using namespace std;
@@ -44,6 +45,7 @@ struct VertexCoord{
         );
     }
 };
+
 struct TriCoords{
     VertexCoord c1;
     VertexCoord c2;
@@ -98,10 +100,31 @@ VertexCoord to_vertex_coord(CubeCoord x){
         x.z
     );
 }
-void add_cube_vertex(CubeCoord cube,vector<float> & vertex_buffer){
+VertexCoord axis_basis(int axis){
+    //axis ranges from
+    assert(axis >= 0 && axis < 3);
+    VertexCoord res(0,0,0);
+    switch(axis){
+        case 0:res.x = 1;break;
+        case 1:res.y = 1;break;
+        case 2:res.z = 1;break;
+    }
+    return res;
+}
+void FaceInfo::buffer_verticies(vector<float> & vertex_buffer){
+    VertexCoord base_p = to_vertex_coord(this->base_coord);
+    VertexCoord axis_vec = axis_basis(this->axis);
+    VertexCoord next_axis_vec = axis_basis((this->axis + 1) % NUM_AXIS);
+    VertexCoord double_axis = axis_vec + next_axis_vec;
+    TriCoords(base_p,base_p + axis_vec, base_p + double_axis).add_to_buffer(vertex_buffer);
+    TriCoords(base_p,base_p + next_axis_vec, base_p + double_axis).add_to_buffer(vertex_buffer);
+}
+
+/*void add_cube_vertex(CubeCoord cube,vector<float> & vertex_buffer){
     vector<TriCoords> base_coords = get_cube_additions();
     VertexCoord cube_base = to_vertex_coord(cube);
     for(TriCoords tc : base_coords){
         tc.translate(cube_base).add_to_buffer(vertex_buffer);
     }
 }
+*/

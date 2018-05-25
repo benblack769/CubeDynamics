@@ -1,12 +1,12 @@
 #version 120
 
 // Interpolated values from the vertex shaders
-varying vec3 fragmentColor;
+varying vec4 fragmentColor;
 
 void main()
 {
 
 	// Output color = red
-	gl_FragColor = vec4(fragmentColor, 1);
+	gl_FragColor = fragmentColor;
 
 }
