@@ -34,7 +34,7 @@ using namespace std;
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path);
 void setup_window();
 class FrameRateControl{
-    const double desired_framerate = 60.0;
+    const double desired_framerate = 80.0;
     std::chrono::system_clock::time_point prev_time;
 public:
     FrameRateControl(){
@@ -42,7 +42,7 @@ public:
     }
     void render_pause(){
         while(!should_render()){
-            std::this_thread::sleep_for(std::chrono::milliseconds(30));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
         prev_time = chrono::system_clock::now();
     }
@@ -54,7 +54,7 @@ public:
 
         const int MIL_PER_SEC = 1000;
 
-        return duration.count() > desired_framerate/MIL_PER_SEC;
+        return duration.count() > MIL_PER_SEC/desired_framerate;
     }
 };
 
@@ -125,18 +125,20 @@ int main( void )
 	glGenBuffers(1, &colorbuffer);
 
     FrameRateControl count;
+    int frame_num = 0;
     do{
+        //sleeps when frame was recently rendered to prevent spinning
+        count.render_pause();
+
+        all_cubes.update();
         vector<BYTE> cube_colors;
         vector<float> cube_verticies;
-        cout << "megama" << endl;
 
         vector<FaceDrawInfo> draw_info = all_cubes.get_exposed_faces();
-        cout << "arlkajsd" << endl;
         for(FaceDrawInfo & info : draw_info){
             info.add_to_buffer(cube_colors,cube_verticies);
         }
-        cout << draw_info.size() << endl;
-        //cout <<
+        cout << "frame drawn" << ++frame_num << endl;
 
         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
         glBufferData(GL_ARRAY_BUFFER, sizeof(float)*cube_verticies.size(), cube_verticies.data(), GL_STREAM_DRAW);
@@ -144,8 +146,6 @@ int main( void )
     	glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
     	glBufferData(GL_ARRAY_BUFFER, sizeof(BYTE)*cube_colors.size(), cube_colors.data(), GL_STREAM_DRAW);
 
-        //sleeps when frame was recently rendered to prevent spinning
-        count.render_pause();
 
         // Clear the screen
         glClear( GL_COLOR_BUFFER_BIT );

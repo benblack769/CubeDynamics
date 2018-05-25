@@ -1,5 +1,6 @@
 #include <vector>
 #include <cassert>
+#include <iostream>
 #include "cube_coords.h"
 
 using namespace std;
@@ -112,12 +113,19 @@ VertexCoord axis_basis(int axis){
     return res;
 }
 void FaceInfo::buffer_verticies(vector<float> & vertex_buffer){
-    VertexCoord base_p = to_vertex_coord(this->base_coord);
-    VertexCoord axis_vec = axis_basis(this->axis);
-    VertexCoord next_axis_vec = axis_basis((this->axis + 1) % NUM_AXIS);
+    VertexCoord zero_v(0,0,0);
+    VertexCoord axis_vec = axis_basis(this->axis_1());
+    VertexCoord next_axis_vec = axis_basis(this->axis_2());
     VertexCoord double_axis = axis_vec + next_axis_vec;
-    TriCoords(base_p,base_p + axis_vec, base_p + double_axis).add_to_buffer(vertex_buffer);
-    TriCoords(base_p,base_p + next_axis_vec, base_p + double_axis).add_to_buffer(vertex_buffer);
+    TriCoords t1(zero_v,axis_vec,double_axis);
+    TriCoords t2(zero_v,next_axis_vec, double_axis);
+    if(this->reversed){
+        t1 = t1.flip1();
+        t2 = t2.flip1();
+    }
+    VertexCoord base_p = to_vertex_coord(this->base_coord);
+    t1.translate(base_p).add_to_buffer(vertex_buffer);
+    t2.translate(base_p).add_to_buffer(vertex_buffer);
 }
 
 /*void add_cube_vertex(CubeCoord cube,vector<float> & vertex_buffer){

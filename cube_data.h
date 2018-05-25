@@ -13,7 +13,7 @@ public:
         type = rand() / float(RAND_MAX);
     }
     RGBVal color(){
-        return RGBVal{type,0,0};
+        return RGBVal{1.0f-type,1.0,1.0};
     }
     bool is_solid(){
         return type > 0.2;
@@ -23,7 +23,7 @@ public:
     }
 };
 
-constexpr int size_cube = 32;
+constexpr int size_cube = 128;
 template<class visit_fn_ty>
 void visit_all_coords(visit_fn_ty visit_fn){
     for(int i = 0; i < size_cube; i++){
@@ -42,7 +42,15 @@ void visit_all_faces(CubeCoord cube,visit_fn_ty visit_fn){
         visit_fn(FaceInfo{cube,true,axis});
     }
 }
-
+bool is_in_axis_bounds(int val){
+    return val >= 0 && val < size_cube;
+}
+bool is_valid_cube(CubeCoord c){
+    return
+        is_in_axis_bounds(c.x) &&
+        is_in_axis_bounds(c.y) &&
+        is_in_axis_bounds(c.z);
+}
 class CubeData{
     vector<CubeInfo> data;
 public:
@@ -58,9 +66,16 @@ public:
         vector<FaceDrawInfo> info;
         visit_all_coords([&](CubeCoord coord){
             visit_all_faces(coord,[&](FaceInfo face){
-                info.push_back(FaceDrawInfo{this->get(coord).color(),face});
+                if(!is_valid_cube(face.cube_facing())){
+                    info.push_back(FaceDrawInfo{this->get(coord).color(),face});
+                }
             });
         });
         return info;
+    }
+    void update(){
+        for(CubeInfo & info : data){
+            info.update();
+        }
     }
 };
