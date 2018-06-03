@@ -3,3 +3,4 @@ lib64
 bin
 *.exe
 external
+*.user
