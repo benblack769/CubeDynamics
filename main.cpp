@@ -36,16 +36,23 @@ constexpr int Y_WIN_SIZE = 768;
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path);
 void setup_window();
 class FrameRateControl{
-    const double desired_framerate = 80.0;
+    double desired_framerate;
     std::chrono::system_clock::time_point prev_time;
 public:
-    FrameRateControl(){
-
+    FrameRateControl(double in_desired_framerate){
+        desired_framerate = in_desired_framerate;
+        prev_time = chrono::system_clock::now();
     }
     void render_pause(){
-        while(!should_render()){
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        while(!this->should_render()){
+            this->spin_sleep();
         }
+        this->rendered();
+    }
+    void spin_sleep(){
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    void rendered(){
         prev_time = chrono::system_clock::now();
     }
     bool should_render(){
@@ -60,43 +67,6 @@ public:
     }
 };
 
-
-/*struct CubeData{
-    RGBVal color;
-    CubeCoord coord;
-};
-void add_cube(CubeData cube, std::vector<float> & color_buffer, std::vector<float> & vertex_buffer){
-    add_cube_colors(cube.color,color_buffer);
-    add_cube_vertex(cube.coord,vertex_buffer);
-}*/
-glm::mat4 rotate_xy(float theta){
-    return glm::mat4{
-                glm::vec4(cos(theta),-sin(theta),0,0),
-                glm::vec4(sin(theta),cos(theta),0,0),
-                glm::vec4(0,0,1,0),
-                glm::vec4(0,0,0,1),
-            };
-}
-glm::mat4 rotate_xz(float theta){
-    return glm::mat4{
-                glm::vec4(cos(theta),0,-sin(theta),0),
-                glm::vec4(0,1,0,0),
-                glm::vec4(sin(theta),0,cos(theta),0),
-                glm::vec4(0,0,0,1),
-            };
-}
-glm::mat4 get_roated_mat(glm::vec3 pos, float theta1, float theta2){
-    glm::mat4 identity;
-    glm::mat4 translate = glm::mat4{
-                glm::vec4(1,0,0,pos.x),
-                glm::vec4(0,1,0,pos.y),
-                glm::vec4(0,0,1,pos.z),
-                glm::vec4(0,0,0,1),
-    };
-    glm::mat4 rotate_t1 = rotate_xy(theta1);
-    glm::mat4 rotate_t2 = rotate_xz(theta2);
-    return rotate_t2 * rotate_t1 * translate * identity;
-}
 struct CameraPosition{
     glm::vec3 pos;
     glm::vec3 zdir;
@@ -146,6 +116,7 @@ void move_cursor(CameraPosition & camera_pos){
 
     float MouseSpeed = 10.0f;
     float moveSpeed = 0.3;
+
     xmov *= MouseSpeed * time_delta;
     ymov *= MouseSpeed * time_delta;
 
@@ -190,41 +161,15 @@ int main( void )
     // Get a handle for our buffers
     GLuint vertexPosition_modelspaceID = glGetAttribLocation(programID, "vertexPosition_modelspace");
 
-    /*static const GLfloat g_vertex_buffer_data[] = {
-        -1.0f,  1.0f, 0.0f,
-        -1.0f,  0.9f, 0.0f,
-        -0.9f,  1.0f, 0.0f,
-        -1.0f, -1.0f, 0.0f,
-         1.0f, -1.0f, 0.0f,
-         0.0f,  1.0f, 0.0f,
-    };*/
-    /*for(int i = 0; i < 12; i++){
-        for(int j = 0; j < 3; j++){
-            for(int k = 0; k < 3; k++){
-                cout << cube_verticies[i*9+j*3+k] << "\t";
-            }
-            cout << endl;
-        }
-        cout << endl;
-    }*/
-
 	GLuint MatrixID = glGetUniformLocation(programID, "MVP_S");
 	GLuint vertexColorID = glGetAttribLocation(programID, "vertexColor");
 
 	// Projection matrix : 45� Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
-	glm::mat4 Projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
+    glm::mat4 Projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 300.0f);
     // Camera matrix
-    glm::mat4 rotate = get_roated_mat(glm::vec3(100,100,100),0.5,3.2);
-    cout << glm::to_string(rotate) << endl;
-    //exit(0);
-	glm::mat4 View       = glm::lookAt(
-								glm::vec3(50,20,-30), // Camera is at (4,3,-3), in World Space
-                                glm::vec3(50,21,-30), // and looks at the origin
-                                glm::normalize(glm::vec3(0.2123,0.531,0))  // Head is up (set to 0,-1,0 to look upside-down)
-						   );
-	// Model matrix : an identity matrix (model will be at the origin)
+    // Model matrix : an identity matrix (model will be at the origin)
 	glm::mat4 Model      = glm::mat4(1.0f);
-	// Our ModelViewProjection : multiplication of our 3 matrices
+
     CameraPosition camera_pos(glm::vec3(50,20,-30),glm::vec3(-1,0,0));
 
 
@@ -236,80 +181,98 @@ int main( void )
 	GLuint colorbuffer;
 	glGenBuffers(1, &colorbuffer);
 
-    FrameRateControl count;
+    vector<BYTE> cube_colors;
+    vector<float> cube_verticies;
+
+    FrameRateControl basic_frame_count(80.0);
+    FrameRateControl cube_update_count(1.0);
+    FrameRateControl cell_automata_update_count(2.0);
     int frame_num = 0;
     do{
         //sleeps when frame was recently rendered to prevent spinning
-        count.render_pause();
+       // basic_frame_count.render_pause();
 
-        move_cursor(camera_pos);
+        if(cell_automata_update_count.should_render()){
+            cell_automata_update_count.rendered();
+            all_cubes.update();
+        }
+        if(cube_update_count.should_render()){
+            cube_update_count.rendered();
 
-        all_cubes.update();
-        vector<BYTE> cube_colors;
+            vector<FaceDrawInfo> draw_info = all_cubes.get_exposed_faces();
+            cube_colors.clear();
+            cube_verticies.clear();
+            for(FaceDrawInfo & info : draw_info){
+                info.add_to_buffer(cube_colors,cube_verticies);
+            }
+            cout << "frame drawn" << ++frame_num << endl;
+
+            glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(float)*cube_verticies.size(), cube_verticies.data(), GL_STATIC_DRAW);
+
+            glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(BYTE)*cube_colors.size(), cube_colors.data(), GL_STATIC_DRAW);
+        }
+        if(basic_frame_count.should_render()){
+            basic_frame_count.rendered();
+            move_cursor(camera_pos);
+            // Clear the screen
+            glClear( GL_COLOR_BUFFER_BIT );
+
+            // enables depth buffer correctly.
+            glClear(GL_DEPTH_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_LESS);
+
+            // Use our shader
+            glUseProgram(programID);
+
+            glm::mat4 MVP      = Projection * camera_pos.veiw_mat() * Model; // Remember, matrix multiplication is the other way around
+            //cout << glm::to_string(MVP) << endl;
+
+            glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+            // 1rst attribute buffer : vertices
+            glEnableVertexAttribArray(vertexPosition_modelspaceID);
+            glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+            glVertexAttribPointer(
+                vertexPosition_modelspaceID, // The attribute we want to configure
+                3,                  // size
+                GL_FLOAT,           // type
+                GL_FALSE,           // normalized?
+                0,                  // stride
+                (void*)0            // array buffer offset
+            );
+
+            // 2nd attribute buffer : colors
+            glEnableVertexAttribArray(vertexColorID);
+            glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+            glVertexAttribPointer(
+                vertexColorID,               // The attribute we want to configure
+                4,                           // size
+                GL_UNSIGNED_BYTE,                    // type
+                GL_TRUE,                    // normalized?
+                0,                           // stride
+                (void*)0                     // array buffer offset
+            );
+
+            // Draw the triangle !
+            glDrawArrays(GL_TRIANGLES, 0, cube_verticies.size()/3); // 3 indices starting at 0 -> 1 triangle
+
+            glDisableVertexAttribArray(vertexPosition_modelspaceID);
+            glDisableVertexAttribArray(vertexColorID);
+
+            // Swap buffers
+            glfwSwapBuffers(window);
+            glfwPollEvents();
+
+        }
         vector<float> cube_verticies;
 
-        vector<FaceDrawInfo> draw_info = all_cubes.get_exposed_faces();
-        for(FaceDrawInfo & info : draw_info){
-            info.add_to_buffer(cube_colors,cube_verticies);
+        if(!basic_frame_count.should_render() &&
+                !cube_update_count.should_render() &&
+                !cell_automata_update_count.should_render()){
+            basic_frame_count.spin_sleep();
         }
-        cout << "frame drawn" << ++frame_num << endl;
-
-        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float)*cube_verticies.size(), cube_verticies.data(), GL_STREAM_DRAW);
-
-    	glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-    	glBufferData(GL_ARRAY_BUFFER, sizeof(BYTE)*cube_colors.size(), cube_colors.data(), GL_STREAM_DRAW);
-
-
-        // Clear the screen
-        glClear( GL_COLOR_BUFFER_BIT );
-
-        // enables depth buffer correctly.
-        glClear(GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
-
-        // Use our shader
-        glUseProgram(programID);
-
-        glm::mat4 MVP      = Projection * camera_pos.veiw_mat() * Model; // Remember, matrix multiplication is the other way around
-        //cout << glm::to_string(MVP) << endl;
-
-		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
-        // 1rst attribute buffer : vertices
-        glEnableVertexAttribArray(vertexPosition_modelspaceID);
-        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-        glVertexAttribPointer(
-            vertexPosition_modelspaceID, // The attribute we want to configure
-            3,                  // size
-            GL_FLOAT,           // type
-            GL_FALSE,           // normalized?
-            0,                  // stride
-            (void*)0            // array buffer offset
-        );
-
-		// 2nd attribute buffer : colors
-		glEnableVertexAttribArray(vertexColorID);
-		glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-		glVertexAttribPointer(
-			vertexColorID,               // The attribute we want to configure
-			4,                           // size
-			GL_UNSIGNED_BYTE,                    // type
-			GL_TRUE,                    // normalized?
-			0,                           // stride
-			(void*)0                     // array buffer offset
-		);
-
-        // Draw the triangle !
-        glDrawArrays(GL_TRIANGLES, 0, cube_verticies.size()/3); // 3 indices starting at 0 -> 1 triangle
-
-        glDisableVertexAttribArray(vertexPosition_modelspaceID);
-		glDisableVertexAttribArray(vertexColorID);
-
-        // Swap buffers
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    	glDeleteBuffers(1, &colorbuffer);
 
     } // Check if the ESC key was pressed or the window was closed
     while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
@@ -319,6 +282,7 @@ int main( void )
     // Cleanup VBO
     glDeleteProgram(programID);
     glDeleteBuffers(1, &vertexbuffer);
+    glDeleteBuffers(1, &colorbuffer);
 
     // Close OpenGL window and terminate GLFW
     glfwTerminate();

@@ -23,7 +23,7 @@ public:
     }
 };
 
-constexpr int size_cube = 64;
+constexpr int size_cube = 30;
 template<class visit_fn_ty>
 void visit_all_coords(visit_fn_ty visit_fn){
     for(int i = 0; i < size_cube; i++){
