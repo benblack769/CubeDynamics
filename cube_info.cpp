@@ -46,7 +46,7 @@ MassVec CubeInfo::get_bordering_quantity_vel(glm::vec3 cube_direction){
         return MassVec{0,glm::vec3(0,0,0)};
     }
 
-    float amt_given = std::min(total_vel * vel_quant_adj, this->quantity/float(SIDES_ON_CUBE));
+    float amt_given = std::min(total_vel * this->quantity * vel_quant_adj, this->quantity/float(SIDES_ON_CUBE));
 
     glm::vec3 pressure_motion = cube_direction * pressure;
 

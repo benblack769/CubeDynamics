@@ -52,13 +52,13 @@ CubeInfo & CubeData::get(CubeCoord c){
 std::vector<FaceDrawInfo> CubeData::get_exposed_faces(){
     std::vector<FaceDrawInfo> info;
     visit_all_coords([&](CubeCoord coord){
-        if(!this->get(coord).is_transparent()){
+        //if(!this->get(coord).is_transparent()){
             visit_all_faces(coord,[&](FaceInfo face){
-                if(!is_valid_cube(face.cube_facing()) || this->get(face.cube_facing()).is_transparent()){
+                if(!is_valid_cube(face.cube_facing())){// || this->get(face.cube_facing()).is_transparent()){
                     info.push_back(FaceDrawInfo{this->get(coord).color(),face});
                 }
             });
-        }
+        //}
     });
     return info;
 }

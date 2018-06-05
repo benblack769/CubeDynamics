@@ -30,6 +30,7 @@ using namespace std;
 #include <stdlib.h>
 #include <string.h>
 #include <chrono>
+#include <ctime>
 
 constexpr int X_WIN_SIZE = 1024;
 constexpr int Y_WIN_SIZE = 768;
@@ -146,6 +147,7 @@ void move_cursor(CameraPosition & camera_pos){
 
 int main( void )
 {
+    srand(clock());
     setup_window();
     //glDepthFunc(GL_LESS);
     // Dark blue background
