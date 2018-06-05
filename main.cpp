@@ -190,8 +190,8 @@ int main( void )
     vector<float> cube_verticies;
 
     FrameRateControl basic_frame_count(80.0);
-    FrameRateControl cube_update_count(10.0);
-    FrameRateControl cell_automata_update_count(100.0);
+    FrameRateControl cube_update_count(30.0);
+    FrameRateControl cell_automata_update_count(500.0);
     int frame_num = 0;
     do{
         //sleeps when frame was recently rendered to prevent spinning

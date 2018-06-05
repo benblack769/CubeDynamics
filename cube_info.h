@@ -10,14 +10,25 @@
 
 constexpr int SIDES_ON_CUBE = 6;
 
+struct MassVec{
+    float mass;
+    glm::vec3 vec;
+};
 class CubeInfo{
     float quantity;
     glm::vec3 velocity;
     bool is_border;
 public:
     CubeInfo(bool in_is_border=false);
-    void give_bordering_quantity_vel(glm::vec3 cube_direction, CubeInfo & bordering);
+    MassVec get_bordering_quantity_vel(glm::vec3 cube_direction);
     void update_velocity_global();
     RGBVal color();
     bool is_transparent();
+    void subtract_mass(MassVec removal){
+        quantity -= removal.mass;
+    }
+    void add_massvec(MassVec addition){
+        velocity = (velocity * quantity + addition.vec * addition.mass) / (quantity + addition.mass);
+        quantity += addition.mass;
+    }
 };
