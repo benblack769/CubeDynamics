@@ -1,7 +1,7 @@
+#include "cube_coords.h"
 #include <vector>
 #include <cassert>
 #include <iostream>
-#include "cube_coords.h"
 
 using namespace std;
 
@@ -111,6 +111,19 @@ VertexCoord axis_basis(int axis){
         case 2:res.z = 1;break;
     }
     return res;
+}
+
+CubeCoord FaceInfo::cube_facing(){
+    int inc_axis = tangent_axis();//tangent axis to plane of face
+    CubeCoord val = base_coord;
+    assert(inc_axis >= 0 && inc_axis < 3);
+    int dir = reversed ? 1 : -1;
+    switch(inc_axis){
+        case 0: val.x += dir; break;
+        case 1: val.y += dir; break;
+        case 2: val.z += dir; break;
+    }
+    return val;
 }
 void FaceInfo::buffer_verticies(vector<float> & vertex_buffer){
     VertexCoord zero_v(0,0,0);

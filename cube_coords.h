@@ -1,6 +1,7 @@
 #pragma once
-#include <vector>
 #include "cube_color.h"
+#include <vector>
+#include <cassert>
 
 struct CubeCoord{
     int x;
@@ -25,18 +26,7 @@ struct FaceInfo{
     int tangent_axis(){
         return (_axis+2)%NUM_AXIS;
     }
-    CubeCoord cube_facing(){
-        int inc_axis = tangent_axis();//tangent axis to plane of face
-        CubeCoord val = base_coord;
-        assert(inc_axis >= 0 && inc_axis < 3);
-        int dir = reversed ? 1 : -1;
-        switch(inc_axis){
-            case 0: val.x += dir; break;
-            case 1: val.y += dir; break;
-            case 2: val.z += dir; break;
-        }
-        return val;
-    }
+    CubeCoord cube_facing();
     void buffer_verticies(std::vector<float> & vertex_buffer);
 };
 struct FaceDrawInfo{

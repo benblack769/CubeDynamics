@@ -1,3 +1,6 @@
+#include "cube_data.h"
+#include "cube_coords.h"
+
 // Include standard headers
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,13 +25,11 @@ using namespace glm;
 #include <iostream>
 #include <fstream>
 #include <algorithm>
-#include "cube_coords.h"
 using namespace std;
 
 #include <stdlib.h>
 #include <string.h>
 #include <chrono>
-#include "cube_data.h"
 
 constexpr int X_WIN_SIZE = 1024;
 constexpr int Y_WIN_SIZE = 768;
@@ -41,7 +42,7 @@ class FrameRateControl{
 public:
     FrameRateControl(double in_desired_framerate){
         desired_framerate = in_desired_framerate;
-        prev_time = chrono::system_clock::now();
+       // prev_time = chrono::system_clock::now();
     }
     void render_pause(){
         while(!this->should_render()){
@@ -80,7 +81,7 @@ struct CameraPosition{
                                     pos+zdir, // and looks at the origin
                                     glm::normalize(glm::vec3(0,1,0))   // Head is up (set to 0,-1,0 to look upside-down)
                                );
-        cout << glm::to_string(View) << endl;
+        //cout << glm::to_string(View) << endl;
         return View;
     }
     void update_dir(float xoffset, float yoffset){
@@ -152,6 +153,10 @@ int main( void )
     glfwPollEvents();
     glfwSetCursorPos(window, X_WIN_SIZE/2, Y_WIN_SIZE/2);
 
+    //glutInitDisplayMode(GLUT_SINGLE|GLUT_RGBA);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable( GL_BLEND );
+
     glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
 
@@ -185,8 +190,8 @@ int main( void )
     vector<float> cube_verticies;
 
     FrameRateControl basic_frame_count(80.0);
-    FrameRateControl cube_update_count(1.0);
-    FrameRateControl cell_automata_update_count(2.0);
+    FrameRateControl cube_update_count(10.0);
+    FrameRateControl cell_automata_update_count(100.0);
     int frame_num = 0;
     do{
         //sleeps when frame was recently rendered to prevent spinning
@@ -205,7 +210,7 @@ int main( void )
             for(FaceDrawInfo & info : draw_info){
                 info.add_to_buffer(cube_colors,cube_verticies);
             }
-            cout << "frame drawn" << ++frame_num << endl;
+            //cout << "frame drawn" << ++frame_num << endl;
 
             glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
             glBufferData(GL_ARRAY_BUFFER, sizeof(float)*cube_verticies.size(), cube_verticies.data(), GL_STATIC_DRAW);

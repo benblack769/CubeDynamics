@@ -14,6 +14,8 @@ link_directories(${CMAKE_SOURCE_DIR}/lib64)
 add_executable(squares
     main.cpp
     cube_coords.cpp
+    cube_info.cpp
+    cube_data.cpp
     )
 target_link_libraries(squares
     glfw3
