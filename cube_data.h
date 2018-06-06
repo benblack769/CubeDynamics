@@ -9,8 +9,7 @@ constexpr int size_cube = 30;
 class CubeData{
     std::vector<CubeInfo> data;
 public:
-    CubeData():
-        data(size_cube*size_cube*size_cube){}
+    CubeData();
     CubeInfo & get(int x, int y, int z);
     CubeInfo & get(CubeCoord c);
     std::vector<FaceDrawInfo> get_exposed_faces();

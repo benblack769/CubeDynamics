@@ -191,9 +191,9 @@ int main( void )
     vector<BYTE> cube_colors;
     vector<float> cube_verticies;
 
-    FrameRateControl basic_frame_count(80.0);
-    FrameRateControl cube_update_count(30.0);
-    FrameRateControl cell_automata_update_count(500.0);
+    FrameRateControl basic_frame_count(30.0);
+    FrameRateControl cube_update_count(20.0);
+    FrameRateControl cell_automata_update_count(1000.0);
     int frame_num = 0;
     do{
         //sleeps when frame was recently rendered to prevent spinning

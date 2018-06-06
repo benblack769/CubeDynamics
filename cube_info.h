@@ -15,6 +15,7 @@ struct MassVec{
     glm::vec3 vec;
 };
 class CubeInfo{
+public:
     float quantity;
     glm::vec3 velocity;
     bool is_border;
@@ -25,10 +26,13 @@ public:
     RGBVal color();
     bool is_transparent();
     void subtract_mass(MassVec removal){
+        velocity = (velocity * quantity - removal.vec * removal.mass) / (quantity - removal.mass);
         quantity -= removal.mass;
+        assert(quantity >= 0);
     }
     void add_massvec(MassVec addition){
         velocity = (velocity * quantity + addition.vec * addition.mass) / (quantity + addition.mass);
         quantity += addition.mass;
+        assert(quantity >= 0);
     }
 };

@@ -1,5 +1,6 @@
 #include "cube_data.h"
 #include <iostream>
+#include "glm/gtx/string_cast.hpp"
 using namespace std;
 
 
@@ -39,6 +40,14 @@ bool is_valid_cube(CubeCoord c){
         is_in_axis_bounds(c.z);
 }
 
+CubeData::CubeData():
+    data(size_cube*size_cube*size_cube){
+    for(auto & a : data){
+      //  a.quantity = 0.5;
+    }
+    //get(10,10,10).quantity = 100;
+    //get(5,5,5).quantity = 100;
+}
 
 CubeInfo & CubeData::get(int x, int y, int z){
     static CubeInfo border(true);
@@ -62,6 +71,7 @@ std::vector<FaceDrawInfo> CubeData::get_exposed_faces(){
     });
     return info;
 }
+int counter = 0;
 void CubeData::update(){
     CubeData new_iter(*this);
     visit_all_coords([&](CubeCoord base_coord){
@@ -72,15 +82,37 @@ void CubeData::update(){
                 new_iter.get(base_coord).subtract_mass(add_vec);
             }
             else{
+                counter++;
                 //is border cube
+                //cout << to_string(cube_dir) << endl;
+                //cout << adj_coord << endl;
                 float mag_incident = glm::dot(add_vec.vec,cube_dir);
-                if(mag_incident > 0){
-                    //cout << mag_incident << endl;
-                    glm::vec3 refl_vec = add_vec.vec - cube_dir * mag_incident * 2.0f;
-                    MassVec reflected_vector{add_vec.mass,refl_vec};
-                    new_iter.get(base_coord).subtract_mass(reflected_vector);
-                    new_iter.get(base_coord).add_massvec(reflected_vector);
-                }
+                assert(mag_incident >= 0);
+                //cout << mag_incident << endl;
+                float reflection_friction = 0.0;
+                glm::vec3 refl_vec = add_vec.vec - cube_dir * mag_incident * (2.0f - reflection_friction);
+                //cout << "refl" << endl;
+                //cout << glm::to_string(add_vec.vec) << endl;
+                //cout << glm::to_string(cube_dir) << endl;
+                //cout << glm::to_string(refl_vec) << endl;
+                MassVec reflected_vector{add_vec.mass,refl_vec};
+                /*if(this->get(base_coord).quantity > 100){
+                    cout << "start" << endl;
+                    cout << to_string(cube_dir) << endl;
+                    cout << to_string(add_vec.vec) << endl;
+                    cout << to_string(add_vec.mass) << endl;
+                    cout << to_string(refl_vec) << endl;
+                    cout << to_string(this->get(base_coord).quantity) << endl;
+                    cout << to_string(this->get(base_coord).velocity) << endl;
+                    cout << to_string(new_iter.get(base_coord).quantity) << endl;
+                    cout << to_string(new_iter.get(base_coord).velocity) << endl;
+                }*/
+                new_iter.get(base_coord).subtract_mass(add_vec);
+                new_iter.get(base_coord).add_massvec(reflected_vector);
+                /*if(this->get(base_coord).quantity > 100){
+                    cout << to_string(new_iter.get(base_coord).quantity) << endl;
+                    cout << to_string(new_iter.get(base_coord).velocity) << endl;
+                }*/
             }
         });
     });

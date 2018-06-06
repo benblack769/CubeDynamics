@@ -2,12 +2,16 @@
 #include "cube_color.h"
 #include <vector>
 #include <cassert>
+#include <iostream>
 
 struct CubeCoord{
     int x;
     int y;
     int z;
 };
+inline std::ostream & operator << (std::ostream & os, CubeCoord v){
+    return os << v.x << "  " << v.y << "  " << v.z;
+}
 
 constexpr int NUM_AXIS = 3;
 struct FaceInfo{

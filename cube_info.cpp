@@ -9,10 +9,7 @@ CubeInfo::CubeInfo(bool in_is_border){
     quantity = is_border ? 0 : rand() / float(RAND_MAX);
     velocity = glm::vec3(0,0,0);
 }
-glm::vec3 element_mul(glm::vec3 v1, glm::vec3 v2){
-    return glm::vec3(v1.x*v2.x,v1.y*v2.y,v1.z*v2.z);
-}
-int counter = 0;
+//int counter = 0;
 MassVec CubeInfo::get_bordering_quantity_vel(glm::vec3 cube_direction){
     /*
     params: cube_direction: the unit vector pointing from this to the "bordering" cube
@@ -32,12 +29,14 @@ MassVec CubeInfo::get_bordering_quantity_vel(glm::vec3 cube_direction){
         //cout << to_string(bordering.velocity) << endl;
         return ;
     }*/
-    constexpr float vel_quant_adj = 0.0003;
+    constexpr float vel_quant_adj = 0.0002;
     constexpr float quant_vel_adj = 1.0/vel_quant_adj;
-    float pressure = this->quantity*5;
+    float pressure = this->quantity*30;
 
-    float velocity_in_dir = glm::dot(cube_direction,velocity);
-    float total_vel = velocity_in_dir + pressure;
+    glm::vec3 pressure_motion = cube_direction * pressure;
+    glm::vec3 total_motion = velocity + pressure_motion;
+
+    float total_vel = glm::dot(cube_direction,total_motion);
 
     //std::cout << pressure << " ";
     //std::cout << velocity_in_dir << "           ";
@@ -45,13 +44,12 @@ MassVec CubeInfo::get_bordering_quantity_vel(glm::vec3 cube_direction){
     if(total_vel <= 0){
         return MassVec{0,glm::vec3(0,0,0)};
     }
+    if(total_vel > 1000){
+        cout << "g1000\n";
+    }
 
-    float amt_given = std::min(total_vel * this->quantity * vel_quant_adj, this->quantity/float(SIDES_ON_CUBE));
+    float amt_given = std::min(total_vel * this->quantity * vel_quant_adj, 10e10f);// this->quantity/float(SIDES_ON_CUBE));
 
-    glm::vec3 pressure_motion = cube_direction * pressure;
-
-    //glm::vec3 total_motion = cube_direction * total_vel;
-    glm::vec3 total_motion = velocity + pressure_motion;
     return MassVec{amt_given, total_motion};
 }
 void CubeInfo::update_velocity_global(){
@@ -59,7 +57,7 @@ void CubeInfo::update_velocity_global(){
     velocity += glm::vec3(0,-0.1,0);
 }
 RGBVal CubeInfo::color(){
-    return RGBVal{1.0,1.0,1.0,std::min(abs(quantity)/2.0f,1.0f)};
+    return RGBVal{std::min(abs(quantity)/10.0f,1.0f),1.0,1.0,std::min(abs(quantity)/2.0f,1.0f)};
 }
 bool CubeInfo::is_transparent(){
     return quantity < 0.03;
