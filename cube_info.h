@@ -23,6 +23,7 @@ public:
     CubeInfo(bool in_is_border=false);
     MassVec get_bordering_quantity_vel(glm::vec3 cube_direction);
     void update_velocity_global();
+    void debug_print();
     RGBVal color();
     bool is_transparent();
     void subtract_mass(MassVec removal){

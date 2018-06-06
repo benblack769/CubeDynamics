@@ -18,19 +18,7 @@ MassVec CubeInfo::get_bordering_quantity_vel(glm::vec3 cube_direction){
             if a border, then remove some of the velocity going in the direction of the border.
     */
     assert(!this->is_border);
-    /*if(this->is_border){
-        //cout << "border" << endl;
-        //cout << to_string(bordering.velocity) << endl;
-        float mag_incident = glm::dot(bordering.velocity,cube_direction);
-        if(mag_incident < 0){
-            bordering.velocity -= cube_direction * mag_incident;
-        }
-        //bordering.velocity -= element_mul(bordering.velocity, (cube_direction * 0.8f));
-        //cout << to_string(bordering.velocity) << endl;
-        return ;
-    }*/
     constexpr float vel_quant_adj = 0.0002;
-    constexpr float quant_vel_adj = 1.0/vel_quant_adj;
     float pressure = this->quantity*30;
 
     glm::vec3 pressure_motion = cube_direction * pressure;
@@ -38,9 +26,6 @@ MassVec CubeInfo::get_bordering_quantity_vel(glm::vec3 cube_direction){
 
     float total_vel = glm::dot(cube_direction,total_motion);
 
-    //std::cout << pressure << " ";
-    //std::cout << velocity_in_dir << "           ";
-    //std::cout << quantity << " ";
     if(total_vel <= 0){
         return MassVec{0,glm::vec3(0,0,0)};
     }
@@ -48,7 +33,7 @@ MassVec CubeInfo::get_bordering_quantity_vel(glm::vec3 cube_direction){
         cout << "g1000\n";
     }
 
-    float amt_given = std::min(total_vel * this->quantity * vel_quant_adj, 10e10f);// this->quantity/float(SIDES_ON_CUBE));
+    float amt_given = std::min(total_vel * this->quantity * vel_quant_adj, this->quantity/float(SIDES_ON_CUBE));
 
     return MassVec{amt_given, total_motion};
 }
@@ -61,4 +46,8 @@ RGBVal CubeInfo::color(){
 }
 bool CubeInfo::is_transparent(){
     return quantity < 0.03;
+}
+void CubeInfo::debug_print(){
+    cout << this->quantity << endl;
+    cout << to_string(this->velocity) << endl;
 }
