@@ -45,7 +45,7 @@ CubeData::CubeData():
     for(auto & a : data){
       //  a.quantity = 0.05;
     }
-    get(10,10,10).quantity = 100;
+    get(10,10,10).data.air_mass = 100;
     //get(5,5,5).quantity = 100;
 }
 
@@ -82,26 +82,25 @@ void CubeData::update(){
     CubeData new_iter = *this;
     visit_all_coords([&](CubeCoord base_coord){
         visit_all_adjacent(base_coord,[&](CubeCoord adj_coord, glm::vec3 cube_dir){
-            MassVec add_vec = this->get(base_coord).get_bordering_quantity_vel(cube_dir);
+            QuantityInfo add_vec = this->get(base_coord).get_bordering_quantity_vel(cube_dir);
 
             if(is_valid_cube(adj_coord)){
-                new_iter.get(adj_coord).add_massvec(add_vec);
-                new_iter.get(base_coord).subtract_mass(add_vec);
+                new_iter.get(adj_coord).data.add(add_vec);
+                new_iter.get(base_coord).data.subtract(add_vec);
             }
             else{
                 //is border cube
-                MassVec reflected_vector{add_vec.mass,reflect_vector_along(add_vec.vec,cube_dir)};
-                if(this->get(base_coord).quantity > 100){
+                QuantityInfo reflected_vector{add_vec.air_mass,add_vec.liquid_mass,reflect_vector_along(add_vec.vec,cube_dir)};
+                if(this->get(base_coord).data.mass() > 100){
                     cout << "start" << endl;
                     cout << to_string(cube_dir) << endl;
-                    cout << to_string(add_vec.vec) << endl;
-                    cout << to_string(add_vec.mass) << endl;
+                    add_vec.debug_print();
                     this->get(base_coord).debug_print();
                     new_iter.get(base_coord).debug_print();
                 }
-                new_iter.get(base_coord).subtract_mass(add_vec);
-                new_iter.get(base_coord).add_massvec(reflected_vector);
-                if(this->get(base_coord).quantity > 100){
+                new_iter.get(base_coord).data.add(reflected_vector);
+                new_iter.get(base_coord).data.subtract(add_vec);
+                if(this->get(base_coord).data.mass() > 100){
                     new_iter.get(base_coord).debug_print();
                 }
             }
