@@ -20,9 +20,14 @@ struct QuantityInfo{
         return air_mass + liquid_mass;
     }
     void add(QuantityInfo addval){
+        if(abs(addval.mass()) < 10e-20f){
+            return;
+        }
         this->vec = (this->vec * this->mass() + addval.vec * addval.mass()) / (this->mass() + addval.mass());
         this->air_mass += addval.air_mass;
         this->liquid_mass += addval.liquid_mass;
+        this->air_mass = std::max(0.0f,this->air_mass);
+        this->liquid_mass = std::max(0.0f,this->liquid_mass);
         assert(this->air_mass >= 0);
         assert(this->liquid_mass >= 0);
     }

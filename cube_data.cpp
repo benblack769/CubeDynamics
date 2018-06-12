@@ -74,7 +74,7 @@ std::vector<FaceDrawInfo> CubeData::get_exposed_faces(){
 glm::vec3 reflect_vector_along(glm::vec3 vector, glm::vec3 cube_dir){
     //reflects the vector in opposite direction of the cube_dir
     float mag_incident = glm::dot(vector,cube_dir);
-    assert(mag_incident >= 0);
+    //assert(mag_incident >= 0);
     glm::vec3 refl_vec = vector - cube_dir * mag_incident * 2.0f;
     return refl_vec;
 }
@@ -87,6 +87,7 @@ void CubeData::update(){
             if(is_valid_cube(adj_coord)){
                 new_iter.get(adj_coord).data.add(add_vec);
                 new_iter.get(base_coord).data.subtract(add_vec);
+                //add_vec.debug_print();
             }
             else{
                 //is border cube
