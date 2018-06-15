@@ -43,10 +43,10 @@ bool is_valid_cube(CubeCoord c){
 CubeData::CubeData():
     data(size_cube*size_cube*size_cube){
     for(auto & a : data){
-      //  a.quantity = 0.05;
+        a.data.liquid_mass = 0.001;
     }
-    get(10,10,10).data.air_mass = 100;
-    //get(5,5,5).quantity = 100;
+    //get(10,10,10).data.air_mass = 100;
+    get(5,5,5).data.liquid_mass = 100;
 }
 
 CubeInfo & CubeData::get(int x, int y, int z){
@@ -75,14 +75,15 @@ glm::vec3 reflect_vector_along(glm::vec3 vector, glm::vec3 cube_dir){
     //reflects the vector in opposite direction of the cube_dir
     float mag_incident = glm::dot(vector,cube_dir);
     //assert(mag_incident >= 0);
-    glm::vec3 refl_vec = vector - cube_dir * mag_incident * 2.0f;
+    float dampen_value = 1.0f;
+    glm::vec3 refl_vec = vector - cube_dir * mag_incident * (2.0f - dampen_value);
     return refl_vec;
 }
 void CubeData::update(){
     CubeData new_iter = *this;
     visit_all_coords([&](CubeCoord base_coord){
         visit_all_adjacent(base_coord,[&](CubeCoord adj_coord, glm::vec3 cube_dir){
-            QuantityInfo add_vec = this->get(base_coord).get_bordering_quantity_vel(cube_dir);
+            QuantityInfo add_vec = this->get(base_coord).get_bordering_quantity_vel(this->get(adj_coord),cube_dir);
 
             if(is_valid_cube(adj_coord)){
                 new_iter.get(adj_coord).data.add(add_vec);

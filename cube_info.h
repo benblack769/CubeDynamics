@@ -20,14 +20,16 @@ struct QuantityInfo{
         return air_mass + liquid_mass;
     }
     void add(QuantityInfo addval){
-        if(abs(addval.mass()) < 10e-20f){
-            return;
+        if(abs((this->mass() + addval.mass())) < 10e-20f){
+            this->vec = glm::vec3(0,0,0);
         }
-        this->vec = (this->vec * this->mass() + addval.vec * addval.mass()) / (this->mass() + addval.mass());
+        else{
+            this->vec = (this->vec * this->mass() + addval.vec * addval.mass()) / (this->mass() + addval.mass());
+        }
         this->air_mass += addval.air_mass;
         this->liquid_mass += addval.liquid_mass;
-        this->air_mass = std::max(0.0f,this->air_mass);
-        this->liquid_mass = std::max(0.0f,this->liquid_mass);
+        //this->air_mass = std::max(0.0f,this->air_mass);
+        //this->liquid_mass = std::max(0.0f,this->liquid_mass);
         assert(this->air_mass >= 0);
         assert(this->liquid_mass >= 0);
     }
@@ -50,7 +52,7 @@ public:
     bool is_border;
 public:
     CubeInfo(bool in_is_border=false);
-    QuantityInfo get_bordering_quantity_vel(glm::vec3 cube_direction);
+    QuantityInfo get_bordering_quantity_vel(const CubeInfo & other_cube,glm::vec3 cube_direction);
     void update_velocity_global();
     RGBVal color();
     bool is_transparent();
