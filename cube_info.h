@@ -11,7 +11,9 @@
 
 constexpr int SIDES_ON_CUBE = 6;
 
-
+struct VectorAttraction{
+    float attraction_force;
+};
 struct QuantityInfo{
     float air_mass;
     float liquid_mass;
@@ -46,13 +48,17 @@ struct QuantityInfo{
         cout << to_string(this->vec) << endl;
     }
 };
+struct CubeChangeInfo{
+    VectorAttraction attract;
+    QuantityInfo quantity_shift;
+};
 class CubeInfo{
 public:
     QuantityInfo data;
     bool is_border;
 public:
     CubeInfo(bool in_is_border=false);
-    QuantityInfo get_bordering_quantity_vel(const CubeInfo & other_cube,glm::vec3 cube_direction);
+    CubeChangeInfo get_bordering_quantity_vel(const CubeInfo & other_cube,glm::vec3 cube_direction);
     void update_velocity_global();
     RGBVal color();
     bool is_transparent();

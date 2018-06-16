@@ -7,7 +7,7 @@ CubeInfo::CubeInfo(bool in_is_border){
     is_border = in_is_border;
     if(!is_border){
         data.air_mass = 0.0f;//rand() / float(RAND_MAX);
-        data.liquid_mass = 0.0f;//2*rand() / float(RAND_MAX);
+        data.liquid_mass = 20*rand() / float(RAND_MAX);
     }
     else{
         data.air_mass = 0;
@@ -16,13 +16,13 @@ CubeInfo::CubeInfo(bool in_is_border){
     data.vec = glm::vec3(0,0,0);
 }
 float surface_area(float quantity){
-    return pow(quantity,2.0/3.0);
+    return pow(quantity,1.0/3.0);
 }
 float square(float x){
     return x * x;
 }
 int counter = 0;
-QuantityInfo CubeInfo::get_bordering_quantity_vel(const CubeInfo & other_cube,glm::vec3 cube_direction){
+CubeChangeInfo CubeInfo::get_bordering_quantity_vel(const CubeInfo & other_cube,glm::vec3 cube_direction){
     /*
     params: cube_direction: the unit vector pointing from this to the "bordering" cube
             bordering: a cube that is adjacent to the current one
@@ -30,18 +30,18 @@ QuantityInfo CubeInfo::get_bordering_quantity_vel(const CubeInfo & other_cube,gl
             if a border, then remove some of the velocity going in the direction of the border.
     */
     assert(!this->is_border);
-    constexpr float vel_quant_adj = 0.002;
+    constexpr float vel_quant_adj = 0.001;
     constexpr float attraction_force_coef = 10.0;
-    constexpr float liquid_pressure_coef = 5.0;
+    constexpr float liquid_pressure_coef = 0.5;
     constexpr float gass_pressure_coef = 30.0;
 
     float liquid_attraction_force = attraction_force_coef * surface_area(this->data.liquid_mass) * surface_area(other_cube.data.liquid_mass);
-    float attraction_speed = liquid_attraction_force / max(this->data.liquid_mass,1e-8f);
+    float attraction_speed = liquid_attraction_force / max((this->data.liquid_mass),1e-8f);
 
-    float internal_attraction_force = attraction_force_coef * surface_area(this->data.liquid_mass);
+    float internal_attraction_force = 0;//attraction_force_coef * (surface_area(this->data.liquid_mass));
     float liquid_raw_pressure = liquid_pressure_coef*data.liquid_mass;
     float liquid_net_pressure = max(0.0f,liquid_raw_pressure-internal_attraction_force);
-    float liquid_force = liquid_net_pressure + attraction_speed;
+    float liquid_force = liquid_net_pressure;// + attraction_speed;
 
     float air_pressure = gass_pressure_coef*data.air_mass;
 
@@ -59,7 +59,7 @@ QuantityInfo CubeInfo::get_bordering_quantity_vel(const CubeInfo & other_cube,gl
 
     QuantityInfo final_quantity = air_transfer_quantity;
     final_quantity.add(liquid_transfer_quantity);
-    if(this->data.liquid_mass > 5){//if(counter % 100000 == 0 ){
+    if(false && this->data.liquid_mass > 5 && counter % 100000 == 0 ){
         cout << "start" << endl;
         cout << attraction_speed << endl;
         cout << liquid_raw_pressure << endl;
@@ -76,8 +76,9 @@ QuantityInfo CubeInfo::get_bordering_quantity_vel(const CubeInfo & other_cube,gl
         liquid_transfer_quantity.debug_print();
         final_quantity.debug_print();
     }
+    VectorAttraction attract_info{liquid_attraction_force};
     counter++;
-    return final_quantity;
+    return CubeChangeInfo{attract_info,final_quantity};
 }
 void CubeInfo::update_velocity_global(){
     //constant acceleration
