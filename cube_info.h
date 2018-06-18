@@ -22,7 +22,7 @@ struct QuantityInfo{
         return air_mass + liquid_mass;
     }
     void add(QuantityInfo addval){
-        if(abs((this->mass() + addval.mass())) < 10e-20f){
+        if(abs((this->mass() + addval.mass())) < 10e-13f){
             this->vec = glm::vec3(0,0,0);
         }
         else{

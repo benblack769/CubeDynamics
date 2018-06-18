@@ -1,5 +1,6 @@
 #include "cube_data.h"
 #include <iostream>
+#include "parameters.h"
 #include "glm/gtx/string_cast.hpp"
 using namespace std;
 
@@ -46,7 +47,7 @@ CubeData::CubeData():
         //a.data.liquid_mass = 0.001;
     }
     //get(10,10,10).data.air_mass = 100;
-    get(5,5,5).data.liquid_mass = 100;
+    //get(5,5,5).data.liquid_mass = 100;
 }
 
 CubeInfo & CubeData::get(int x, int y, int z){
@@ -75,7 +76,7 @@ glm::vec3 reflect_vector_along(glm::vec3 vector, glm::vec3 cube_dir){
     //reflects the vector in opposite direction of the cube_dir
     float mag_incident = glm::dot(vector,cube_dir);
     //assert(mag_incident >= 0);
-    float dampen_value = 0.3f;
+    float dampen_value = 0.1f;
     glm::vec3 refl_vec = vector - cube_dir * mag_incident * (2.0f - dampen_value);
     return refl_vec;
 }
@@ -84,8 +85,10 @@ void pull_together_quantities_with_force(QuantityInfo & one, QuantityInfo & othe
     //float time_frame_const = 0.01;
     float accel_1 = force / one.mass();
     float accel_2 = force / other.mass();
-    one.vec += accel_1 * one_to_other_dir;
-    other.vec -= accel_2 * one_to_other_dir;
+    float speed_1 = accel_1 * seconds_per_calc;
+    float speed_2 = accel_2 * seconds_per_calc;
+    one.vec += speed_1 * one_to_other_dir;
+    other.vec -= speed_2 * one_to_other_dir;
 }
 void CubeData::update(){
     CubeData new_iter = *this;
