@@ -12,7 +12,7 @@
 constexpr int SIDES_ON_CUBE = 6;
 
 struct VectorAttraction{
-    float attraction_force;
+    glm::vec3 force_vec;
 };
 struct QuantityInfo{
     float air_mass;
@@ -35,10 +35,8 @@ struct QuantityInfo{
         this->air_mass += addval.air_mass;
         this->liquid_mass += addval.liquid_mass;
         this->solid_mass += addval.solid_mass;
-        //this->air_mass = std::max(0.0f,this->air_mass);
-        //this->liquid_mass = std::max(0.0f,this->liquid_mass);
-        assert(this->air_mass >= 0);
-        assert(this->liquid_mass >= 0);
+        //assert(this->air_mass >= 0);
+        //assert(this->liquid_mass >= 0);
     }
     void subtract(QuantityInfo subval){
         QuantityInfo add_neg_val = subval;
@@ -57,7 +55,7 @@ struct QuantityInfo{
     }
 };
 struct CubeChangeInfo{
-    VectorAttraction attract;
+    VectorAttraction force_shift;
     QuantityInfo quantity_shift;
 };
 class CubeInfo{

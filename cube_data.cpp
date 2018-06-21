@@ -16,6 +16,21 @@ void visit_all_coords(visit_fn_ty visit_fn){
     }
 }
 template<class visit_fn_ty>
+void visit_all_coords_between(CubeCoord lower,CubeCoord upper,visit_fn_ty visit_fn){
+    assert(
+                lower.x < upper.x &&
+                lower.y < upper.y &&
+                lower.z < upper.z
+        );
+    for(int i = lower.x; i < upper.x; i++){
+        for(int j = lower.y; j < upper.y; j++){
+            for(int k = lower.z; k < upper.z; k++){
+                visit_fn(CubeCoord{i,j,k});
+            }
+        }
+    }
+}
+template<class visit_fn_ty>
 void visit_all_adjacent(CubeCoord cube,visit_fn_ty visit_fn){
     int i = cube.x, j = cube.y, k = cube.z;
     for(int n = -1; n <= 1; n += 2){
@@ -44,8 +59,16 @@ bool is_valid_cube(CubeCoord c){
 CubeData::CubeData():
     data(size_cube*size_cube*size_cube){
     for(auto & a : data){
-        //a.data.liquid_mass = 0.001;
+        a.data.solid_mass = 0;
     }
+    visit_all_coords_between(CubeCoord{2,2,2},CubeCoord{6,6,6},[&](CubeCoord coord){
+        this->get(coord).data.solid_mass = 100;
+        this->get(coord).data.bond_strength = 1;
+    });
+    visit_all_coords_between(CubeCoord{2,12,2},CubeCoord{6,18,6},[&](CubeCoord coord){
+        this->get(coord).data.solid_mass = 100;
+        this->get(coord).data.bond_strength = 1;
+    });
     //get(10,10,10).data.air_mass = 100;
     //get(5,5,5).data.liquid_mass = 100;
 }
@@ -80,15 +103,15 @@ glm::vec3 reflect_vector_along(glm::vec3 vector, glm::vec3 cube_dir){
     glm::vec3 refl_vec = vector - cube_dir * mag_incident * (2.0f - dampen_value);
     return refl_vec;
 }
-void pull_together_quantities_with_force(QuantityInfo & one, QuantityInfo & other,glm::vec3 one_to_other_dir, float force){
+void quantities_echange_force(QuantityInfo & one, QuantityInfo & other,glm::vec3 force_vector){
     //float tot_mass = one.mass() + other.mass();
     //float time_frame_const = 0.01;
-    float accel_1 = force / one.mass();
-    float accel_2 = force / other.mass();
-    float speed_1 = accel_1 * seconds_per_calc;
-    float speed_2 = accel_2 * seconds_per_calc;
-    one.vec += speed_1 * one_to_other_dir;
-    other.vec -= speed_2 * one_to_other_dir;
+    glm::vec3 accel_1 = force_vector / (0.0001f+one.mass());
+    glm::vec3 accel_2 = force_vector / (0.0001f+other.mass());
+    glm::vec3 speed_1 = accel_1 * seconds_per_calc;
+    glm::vec3 speed_2 = accel_2 * seconds_per_calc;
+    one.vec -= speed_1;
+    other.vec += speed_2;
 }
 void CubeData::update(){
     CubeData new_iter = *this;
@@ -101,10 +124,10 @@ void CubeData::update(){
                 new_iter.get(adj_coord).data.add(add_vec);
                 new_iter.get(base_coord).data.subtract(add_vec);
 
-                pull_together_quantities_with_force(new_iter.get(base_coord).data,new_iter.get(adj_coord).data,cube_dir,change_info.attract.attraction_force);
+                quantities_echange_force(new_iter.get(base_coord).data,new_iter.get(adj_coord).data,change_info.force_shift.force_vec);
             }
             else{
-                assert(change_info.attract.attraction_force == 0);
+                //assert(change_info.force_shift.force_vec == glm::vec3(0,0,0));
                 //is border cube
                 QuantityInfo reflected_vector = add_vec;
                 reflected_vector.vec = reflect_vector_along(add_vec.vec,cube_dir);

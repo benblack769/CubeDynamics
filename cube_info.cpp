@@ -9,10 +9,14 @@ CubeInfo::CubeInfo(bool in_is_border){
     if(!is_border){
         data.air_mass = 0;//rand() / float(RAND_MAX);
         data.liquid_mass = 0;//20*rand() / float(RAND_MAX);
+        data.solid_mass = 100*rand() / float(RAND_MAX);
+        data.bond_strength = 0.8f*rand() / float(RAND_MAX);
     }
     else{
         data.air_mass = 0;
         data.liquid_mass = 0;
+        data.solid_mass = 0;
+        data.bond_strength = 0;
     }
     data.vec = glm::vec3(0,0,0);
 }
@@ -40,33 +44,47 @@ CubeChangeInfo CubeInfo::get_bordering_quantity_vel(const CubeInfo & other_cube,
     */
     assert(!this->is_border);
 
-    float liquid_attraction_force = attraction_force_coef * surface_area(this->data.liquid_mass) * surface_area(other_cube.data.liquid_mass);
+    float solid_momentum_bond_accel_coef = bond_strength_coef * this->data.bond_strength * other_cube.data.bond_strength;
+    //assert(solid_momentum_bond_accel_coef <= 0.25f && "cube acceleration too high. could create werid single-cell oscelations");
 
+    glm::vec3 solid_bond_force = (this->data.vec - other_cube.data.vec) *
+            solid_momentum_bond_accel_coef *
+            min(other_cube.data.solid_mass,this->data.solid_mass);
+
+
+    float liquid_attraction_force = attraction_force_coef * surface_area(this->data.liquid_mass) * surface_area(other_cube.data.liquid_mass);
+    glm::vec3 liquid_attraction_vector = -liquid_attraction_force * cube_direction;
+
+    float air_pressure = gass_pressure_coef*data.air_mass;
     float liquid_pressure = liquid_pressure_coef*data.liquid_mass;
     float solid_pressure = solid_pressure_coef*data.solid_mass;
-    float air_pressure = gass_pressure_coef*data.air_mass;
     float total_pressure = air_pressure + liquid_pressure + solid_pressure;
 
     float air_pressure_speed = total_pressure * gass_pressure_coef;
     float liquid_pressure_speed = total_pressure * liquid_pressure_coef;
+    float solid_pressure_speed = total_pressure * solid_pressure_coef;
 
     glm::vec3 total_air_motion = data.vec + cube_direction * air_pressure_speed;
     glm::vec3 total_liquid_motion = data.vec + cube_direction * liquid_pressure_speed;
+    glm::vec3 total_solid_motion = data.vec + cube_direction * solid_pressure_speed;
 
     float basic_air_amt = max(0.0f,glm::dot(cube_direction,total_air_motion));
     float basic_liquid_amt = max(0.0f,glm::dot(cube_direction,total_liquid_motion));
+    float basic_solid_amt = max(0.0f,glm::dot(cube_direction,total_solid_motion));
 
     float amt_air_given = std::min(basic_air_amt * this->data.air_mass * seconds_per_calc, this->data.air_mass/(0.01f+float(SIDES_ON_CUBE)));
     float amt_liquid_given = std::min(basic_liquid_amt * this->data.liquid_mass * seconds_per_calc,this->data.liquid_mass/(0.01f+float(SIDES_ON_CUBE)));
+    float amt_solid_given = std::min(basic_solid_amt * this->data.solid_mass * seconds_per_calc,this->data.solid_mass/(0.01f+float(SIDES_ON_CUBE)));
 
     QuantityInfo air_transfer_quantity = {amt_air_given,0,0,0, total_air_motion};
     QuantityInfo liquid_transfer_quantity = {0,amt_liquid_given,0,0, total_liquid_motion};
+    QuantityInfo solid_transfer_quantity = {0,0,amt_solid_given,this->data.bond_strength, total_solid_motion};
 
     QuantityInfo final_quantity = air_transfer_quantity;
     final_quantity.add(liquid_transfer_quantity);
+    final_quantity.add(solid_transfer_quantity);
 
-    VectorAttraction attract_info{liquid_attraction_force};
-
+    VectorAttraction attract_info{liquid_attraction_vector + solid_bond_force};
     return CubeChangeInfo{attract_info,final_quantity};
 }
 void CubeInfo::update_velocity_global(){
@@ -74,7 +92,7 @@ void CubeInfo::update_velocity_global(){
     this->data.vec += glm::vec3(0,-gravity_constant*seconds_per_calc,0);
 }
 RGBVal CubeInfo::color(){
-    return RGBVal{1.0f-std::min(abs(data.air_mass)/2.0f,1.0f),1.0f,1.0f-std::min(abs(data.liquid_mass)/800.0f,1.0f),1.0};//,std::min(abs(data.air_mass)/2.0f,1.0f)};
+    return RGBVal{1.0f-std::min(abs(data.air_mass)/2.0f,1.0f),1.0f-std::min(abs(data.solid_mass)/1000.0f,1.0f),1.0f-std::min(abs(data.liquid_mass)/800.0f,1.0f),1.0};//,std::min(abs(data.air_mass)/2.0f,1.0f)};
 }
 bool CubeInfo::is_transparent(){
     return data.mass() < 0.03;
