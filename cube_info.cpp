@@ -43,8 +43,9 @@ CubeChangeInfo CubeInfo::get_bordering_quantity_vel(const CubeInfo & other_cube,
     float liquid_attraction_force = attraction_force_coef * surface_area(this->data.liquid_mass) * surface_area(other_cube.data.liquid_mass);
 
     float liquid_pressure = liquid_pressure_coef*data.liquid_mass;
+    float solid_pressure = solid_pressure_coef*data.solid_mass;
     float air_pressure = gass_pressure_coef*data.air_mass;
-    float total_pressure = air_pressure + liquid_pressure;
+    float total_pressure = air_pressure + liquid_pressure + solid_pressure;
 
     float air_pressure_speed = total_pressure * gass_pressure_coef;
     float liquid_pressure_speed = total_pressure * liquid_pressure_coef;
