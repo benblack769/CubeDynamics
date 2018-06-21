@@ -100,24 +100,17 @@ void CubeData::update(){
             if(is_valid_cube(adj_coord)){
                 new_iter.get(adj_coord).data.add(add_vec);
                 new_iter.get(base_coord).data.subtract(add_vec);
+
                 pull_together_quantities_with_force(new_iter.get(base_coord).data,new_iter.get(adj_coord).data,cube_dir,change_info.attract.attraction_force);
             }
             else{
                 assert(change_info.attract.attraction_force == 0);
                 //is border cube
-                QuantityInfo reflected_vector{add_vec.air_mass,add_vec.liquid_mass,reflect_vector_along(add_vec.vec,cube_dir)};
-                if(this->get(base_coord).data.mass() > 10000000){
-                    cout << "start" << endl;
-                    cout << to_string(cube_dir) << endl;
-                    add_vec.debug_print();
-                    this->get(base_coord).debug_print();
-                    new_iter.get(base_coord).debug_print();
-                }
+                QuantityInfo reflected_vector = add_vec;
+                reflected_vector.vec = reflect_vector_along(add_vec.vec,cube_dir);
+
                 new_iter.get(base_coord).data.add(reflected_vector);
                 new_iter.get(base_coord).data.subtract(add_vec);
-                if(this->get(base_coord).data.mass() > 1000000){
-                    new_iter.get(base_coord).debug_print();
-                }
             }
         });
     });

@@ -17,19 +17,24 @@ struct VectorAttraction{
 struct QuantityInfo{
     float air_mass;
     float liquid_mass;
+    float solid_mass;
+    float bond_strength;
     glm::vec3 vec;
     float mass(){
-        return air_mass + liquid_mass;
+        return air_mass + liquid_mass + solid_mass;
     }
     void add(QuantityInfo addval){
-        if(abs((this->mass() + addval.mass())) < 10e-13f){
-            this->vec = glm::vec3(0,0,0);
-        }
-        else{
-            this->vec = (this->vec * this->mass() + addval.vec * addval.mass()) / (this->mass() + addval.mass());
-        }
+        this->vec = abs((this->mass() + addval.mass())) < 10e-13f ?
+                        glm::vec3(0,0,0) :
+                        (this->vec * this->mass() + addval.vec * addval.mass()) / (this->mass() + addval.mass());
+
+        this->bond_strength = abs(this->solid_mass + addval.solid_mass) < 10e-13f ?
+                                            0 :
+                                            (this->bond_strength * this->solid_mass + addval.bond_strength * addval.solid_mass) / (this->solid_mass + addval.solid_mass);
+
         this->air_mass += addval.air_mass;
         this->liquid_mass += addval.liquid_mass;
+        this->solid_mass += addval.solid_mass;
         //this->air_mass = std::max(0.0f,this->air_mass);
         //this->liquid_mass = std::max(0.0f,this->liquid_mass);
         assert(this->air_mass >= 0);
@@ -39,12 +44,15 @@ struct QuantityInfo{
         QuantityInfo add_neg_val = subval;
         add_neg_val.air_mass = - add_neg_val.air_mass;
         add_neg_val.liquid_mass = - add_neg_val.liquid_mass;
+        add_neg_val.solid_mass = - add_neg_val.solid_mass;
         this->add(add_neg_val);
     }
     void debug_print(){
         using namespace  std;
         cout << this->air_mass << endl;
         cout << this->liquid_mass << endl;
+        cout << this->solid_mass << endl;
+        cout << this->bond_strength << endl;
         cout << to_string(this->vec) << endl;
     }
 };
