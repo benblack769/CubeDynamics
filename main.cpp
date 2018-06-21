@@ -105,24 +105,32 @@ struct CameraPosition{
 };
 void move_cursor(CameraPosition & camera_pos){
     static double lastTime = glfwGetTime();
-    double currentTime = glfwGetTime();
-    double time_delta = currentTime - lastTime;
-    lastTime = currentTime;
-
-    double xpos, ypos;
-    glfwGetCursorPos(window, &xpos, &ypos);
-
-    //cout << xpos << "\t" << ypos <<  endl;
-    float xmov = xpos/(X_WIN_SIZE/2) - 1.0;
-    float ymov = -(ypos/(Y_WIN_SIZE/2) - 1.0);
+    static bool cursor_locked = true;
 
     float MouseSpeed = 10.0f;
     float moveSpeed = 0.3;
 
-    xmov *= MouseSpeed * time_delta;
-    ymov *= MouseSpeed * time_delta;
+    double currentTime = glfwGetTime();
+    double time_delta = currentTime - lastTime;
+    lastTime = currentTime;
 
-    camera_pos.update_dir(xmov,ymov);
+    if(cursor_locked){
+        double xpos, ypos;
+        glfwGetCursorPos(window, &xpos, &ypos);
+
+        //cout << xpos << "\t" << ypos <<  endl;
+        float xmov = xpos/(X_WIN_SIZE/2) - 1.0;
+        float ymov = -(ypos/(Y_WIN_SIZE/2) - 1.0);
+
+
+        xmov *= MouseSpeed * time_delta;
+        ymov *= MouseSpeed * time_delta;
+
+        camera_pos.update_dir(xmov,ymov);
+
+        // Reset mouse position for next frame
+        glfwSetCursorPos(window, X_WIN_SIZE/2, Y_WIN_SIZE/2);
+    }
 
     // Move forward
     if (glfwGetKey( window, GLFW_KEY_UP ) == GLFW_PRESS){
@@ -141,8 +149,9 @@ void move_cursor(CameraPosition & camera_pos){
         camera_pos.move_right(-moveSpeed);
     }
 
-    // Reset mouse position for next frame
-    glfwSetCursorPos(window, X_WIN_SIZE/2, Y_WIN_SIZE/2);
+    if (glfwGetKey( window, GLFW_KEY_ENTER ) == GLFW_PRESS){
+         cursor_locked = !cursor_locked;
+    }
 }
 
 int main( void )
