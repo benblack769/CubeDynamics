@@ -102,8 +102,6 @@ glm::vec3 reflect_vector_along(glm::vec3 vector, glm::vec3 cube_dir){
     return refl_vec;
 }
 void quantities_echange_force(QuantityInfo & one, QuantityInfo & other,glm::vec3 force_vector){
-    //float tot_mass = one.mass() + other.mass();
-    //float time_frame_const = 0.01;
     glm::vec3 accel_1 = force_vector / (0.0001f+one.mass());
     glm::vec3 accel_2 = force_vector / (0.0001f+other.mass());
     glm::vec3 speed_1 = accel_1 * seconds_per_calc;

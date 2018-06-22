@@ -57,7 +57,7 @@ public:
     void rendered(){
         prev_time = chrono::system_clock::now();
     }
-    bool should_render(){
+    double duration_since_render(){
         using namespace chrono;
         system_clock::time_point cur_time = system_clock::now();
 
@@ -65,7 +65,10 @@ public:
 
         const int MIL_PER_SEC = 1000;
 
-        return duration.count() > MIL_PER_SEC/desired_framerate;
+        return duration.count()/double(MIL_PER_SEC);
+    }
+    bool should_render(){
+        return duration_since_render() > 1.0/desired_framerate;
     }
 };
 
@@ -203,14 +206,22 @@ int main( void )
     FrameRateControl basic_frame_count(30.0);
     FrameRateControl cube_update_count(20.0);
     FrameRateControl cell_automata_update_count(1000.0);
+    FrameRateControl frame_count_output(1.0);
     int frame_num = 0;
     do{
         //sleeps when frame was recently rendered to prevent spinning
        // basic_frame_count.render_pause();
 
+        if(frame_count_output.should_render()){
+            double duration_since_render = frame_count_output.duration_since_render();
+            frame_count_output.rendered();
+            cout << "frames per second = " << frame_num / duration_since_render << endl;
+            frame_num = 0;
+        }
         if(cell_automata_update_count.should_render()){
             cell_automata_update_count.rendered();
             all_cubes.update();
+            ++frame_num;
         }
         if(cube_update_count.should_render()){
             cube_update_count.rendered();
@@ -221,7 +232,6 @@ int main( void )
             for(FaceDrawInfo & info : draw_info){
                 info.add_to_buffer(cube_colors,cube_verticies);
             }
-            //cout << "frame drawn" << ++frame_num << endl;
 
             glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
             glBufferData(GL_ARRAY_BUFFER, sizeof(float)*cube_verticies.size(), cube_verticies.data(), GL_STATIC_DRAW);
