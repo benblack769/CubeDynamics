@@ -10,13 +10,11 @@ CubeInfo::CubeInfo(bool in_is_border){
         data.air_mass = 0;//rand() / float(RAND_MAX);
         data.liquid_mass = 0;//20*rand() / float(RAND_MAX);
         data.solid_mass = 100*rand() / float(RAND_MAX);
-        data.bond_strength = 0.8f*rand() / float(RAND_MAX);
     }
     else{
         data.air_mass = 0;
         data.liquid_mass = 0;
         data.solid_mass = 0;
-        data.bond_strength = 0;
     }
     data.vec = glm::vec3(0,0,0);
 }
@@ -44,13 +42,6 @@ CubeChangeInfo CubeInfo::get_bordering_quantity_vel(const CubeInfo & other_cube,
     */
     assert(!this->is_border);
 
-    float solid_momentum_bond_accel_coef = bond_strength_coef * this->data.bond_strength * other_cube.data.bond_strength;
-    //assert(solid_momentum_bond_accel_coef <= 0.25f && "cube acceleration too high. could create werid single-cell oscelations");
-
-    glm::vec3 solid_bond_force = (this->data.vec - other_cube.data.vec) *
-            solid_momentum_bond_accel_coef *
-            min(other_cube.data.solid_mass,this->data.solid_mass);
-
 
     float liquid_attraction_force = attraction_force_coef * surface_area(this->data.liquid_mass) * surface_area(other_cube.data.liquid_mass);
     glm::vec3 liquid_attraction_vector = -liquid_attraction_force * cube_direction;
@@ -76,15 +67,15 @@ CubeChangeInfo CubeInfo::get_bordering_quantity_vel(const CubeInfo & other_cube,
     float amt_liquid_given = std::min(basic_liquid_amt * this->data.liquid_mass * seconds_per_calc,this->data.liquid_mass/(0.01f+float(SIDES_ON_CUBE)));
     float amt_solid_given = std::min(basic_solid_amt * this->data.solid_mass * seconds_per_calc,this->data.solid_mass/(0.01f+float(SIDES_ON_CUBE)));
 
-    QuantityInfo air_transfer_quantity = {amt_air_given,0,0,0, total_air_motion};
-    QuantityInfo liquid_transfer_quantity = {0,amt_liquid_given,0,0, total_liquid_motion};
-    QuantityInfo solid_transfer_quantity = {0,0,amt_solid_given,this->data.bond_strength, total_solid_motion};
+    QuantityInfo air_transfer_quantity = {amt_air_given,0,0, total_air_motion};
+    QuantityInfo liquid_transfer_quantity = {0,amt_liquid_given,0, total_liquid_motion};
+    QuantityInfo solid_transfer_quantity = {0,0,amt_solid_given, total_solid_motion};
 
     QuantityInfo final_quantity = air_transfer_quantity;
     final_quantity.add(liquid_transfer_quantity);
     final_quantity.add(solid_transfer_quantity);
 
-    VectorAttraction attract_info{liquid_attraction_vector + solid_bond_force};
+    VectorAttraction attract_info{liquid_attraction_vector};
     return CubeChangeInfo{attract_info,final_quantity};
 }
 void CubeInfo::update_velocity_global(){

@@ -18,7 +18,6 @@ struct QuantityInfo{
     float air_mass;
     float liquid_mass;
     float solid_mass;
-    float bond_strength;
     glm::vec3 vec;
     float mass(){
         return air_mass + liquid_mass + solid_mass;
@@ -27,10 +26,6 @@ struct QuantityInfo{
         this->vec = abs((this->mass() + addval.mass())) < 10e-13f ?
                         glm::vec3(0,0,0) :
                         (this->vec * this->mass() + addval.vec * addval.mass()) / (this->mass() + addval.mass());
-
-        this->bond_strength = abs(this->solid_mass + addval.solid_mass) < 10e-13f ?
-                                            0 :
-                                            (this->bond_strength * this->solid_mass + addval.bond_strength * addval.solid_mass) / (this->solid_mass + addval.solid_mass);
 
         this->air_mass += addval.air_mass;
         this->liquid_mass += addval.liquid_mass;
@@ -50,7 +45,6 @@ struct QuantityInfo{
         cout << this->air_mass << endl;
         cout << this->liquid_mass << endl;
         cout << this->solid_mass << endl;
-        cout << this->bond_strength << endl;
         cout << to_string(this->vec) << endl;
     }
 };

@@ -63,11 +63,9 @@ CubeData::CubeData():
     }
     visit_all_coords_between(CubeCoord{2,2,2},CubeCoord{6,6,6},[&](CubeCoord coord){
         this->get(coord).data.solid_mass = 100;
-        this->get(coord).data.bond_strength = 1;
     });
     visit_all_coords_between(CubeCoord{2,12,2},CubeCoord{6,18,6},[&](CubeCoord coord){
         this->get(coord).data.solid_mass = 100;
-        this->get(coord).data.bond_strength = 1;
     });
     //get(10,10,10).data.air_mass = 100;
     //get(5,5,5).data.liquid_mass = 100;
