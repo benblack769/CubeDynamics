@@ -8,10 +8,11 @@
 constexpr int size_cube = 30;
 class CubeData{
     std::vector<CubeInfo> data;
+    std::vector<float> bond_data;
 public:
     CubeData();
-    CubeInfo & get(int x, int y, int z);
     CubeInfo & get(CubeCoord c);
+    float & get_bond(CubeCoord coord, CubeCoord dir);
     std::vector<FaceDrawInfo> get_exposed_faces();
-    void update();
+    void update(CubeData & update_data);
 };

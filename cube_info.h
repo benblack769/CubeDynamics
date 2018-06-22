@@ -11,20 +11,21 @@
 
 constexpr int SIDES_ON_CUBE = 6;
 
+using Vec3F = glm::vec3;
 struct VectorAttraction{
-    glm::vec3 force_vec;
+    Vec3F force_vec;
 };
 struct QuantityInfo{
     float air_mass;
     float liquid_mass;
     float solid_mass;
-    glm::vec3 vec;
+    Vec3F vec;
     float mass(){
         return air_mass + liquid_mass + solid_mass;
     }
     void add(QuantityInfo addval){
         this->vec = abs((this->mass() + addval.mass())) < 10e-13f ?
-                        glm::vec3(0,0,0) :
+                        Vec3F(0,0,0) :
                         (this->vec * this->mass() + addval.vec * addval.mass()) / (this->mass() + addval.mass());
 
         this->air_mass += addval.air_mass;
@@ -58,7 +59,7 @@ public:
     bool is_border;
 public:
     CubeInfo(bool in_is_border=false);
-    CubeChangeInfo get_bordering_quantity_vel(const CubeInfo & other_cube,glm::vec3 cube_direction);
+    CubeChangeInfo get_bordering_quantity_vel(const CubeInfo & other_cube,Vec3F cube_direction);
     void update_velocity_global();
     RGBVal color();
     bool is_transparent();

@@ -206,22 +206,24 @@ int main( void )
     FrameRateControl basic_frame_count(30.0);
     FrameRateControl cube_update_count(20.0);
     FrameRateControl cell_automata_update_count(1000.0);
-    FrameRateControl frame_count_output(1.0);
-    int frame_num = 0;
+    FrameRateControl update_speed_output_count(1.0);
+    int num_cube_updates = 0;
     do{
         //sleeps when frame was recently rendered to prevent spinning
        // basic_frame_count.render_pause();
 
-        if(frame_count_output.should_render()){
-            double duration_since_render = frame_count_output.duration_since_render();
-            frame_count_output.rendered();
-            cout << "frames per second = " << frame_num / duration_since_render << endl;
-            frame_num = 0;
+        if(update_speed_output_count.should_render()){
+            double duration_since_render = update_speed_output_count.duration_since_render();
+            update_speed_output_count.rendered();
+            cout << "frames per second = " << num_cube_updates / duration_since_render << endl;
+            num_cube_updates = 0;
         }
         if(cell_automata_update_count.should_render()){
             cell_automata_update_count.rendered();
-            all_cubes.update();
-            ++frame_num;
+            CubeData update_data;
+            all_cubes.update(update_data);
+            all_cubes = update_data;
+            ++num_cube_updates;
         }
         if(cube_update_count.should_render()){
             cube_update_count.rendered();

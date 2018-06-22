@@ -8,8 +8,8 @@ CubeInfo::CubeInfo(bool in_is_border){
     is_border = in_is_border;
     if(!is_border){
         data.air_mass = 0;//rand() / float(RAND_MAX);
-        data.liquid_mass = 0;//20*rand() / float(RAND_MAX);
-        data.solid_mass = 100*rand() / float(RAND_MAX);
+        data.liquid_mass = 20*rand() / float(RAND_MAX);
+        data.solid_mass = 0;//100*rand() / float(RAND_MAX);
     }
     else{
         data.air_mass = 0;

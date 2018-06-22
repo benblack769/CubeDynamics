@@ -3,12 +3,9 @@
 #include <vector>
 #include <cassert>
 #include <iostream>
+#include <glm/common.hpp>
 
-struct CubeCoord{
-    int x;
-    int y;
-    int z;
-};
+using CubeCoord = glm::ivec3;
 inline std::ostream & operator << (std::ostream & os, CubeCoord v){
     return os << v.x << "  " << v.y << "  " << v.z;
 }
