@@ -128,7 +128,7 @@ int bond_coord_offset_alt2(int x, int y, int z){
                (~yn1 & 12)));
 }
 int get_coord_bond_block_start(CubeCoord c){
-    return c.x*(size_cube+1)*(size_cube+1) + c.y*(size_cube+1) + c.z;
+    return (c.x+1)*(size_cube+1)*(size_cube+1) + (c.y+1)*(size_cube+1) + (c.z+1);
 }
 float & CubeData::get_bond(CubeCoord coord, CubeCoord dir){
     /*
@@ -182,34 +182,40 @@ Vec3F reflect_vector_along(Vec3F vector, Vec3F cube_dir){
     Vec3F refl_vec = vector - cube_dir * mag_incident * (2.0f - dampen_value);
     return refl_vec;
 }
-Vec3F quantities_calc_force(float one_mass, Vec3F force_vector){
-    Vec3F accel_1 = force_vector / (0.0001f+one_mass);
+float mass_force_coef(float one_mass){
+    float accel_1 = 1.0f / (0.0001f+one_mass);
     //Vec3F accel_2 = force_vector / (0.0001f+other_mass);
-    Vec3F speed_1 = accel_1 * seconds_per_calc;
+    float speed_1 = accel_1 * seconds_per_calc;
     //Vec3F speed_2 = accel_2 * seconds_per_calc;
     return speed_1;
 }
+float energy_to_accel(float energy_val, float mass){
+    return sqrt(2.0f * energy_val / mass);
+}
 void CubeData::update(CubeData & update_data){
-    update_data = *this;
+    Vec3F global_gravity_vector = Vec3F(0,-gravity_constant * seconds_per_calc,0);
     visit_all_coords([&](CubeCoord base_coord){
-        /*Vec3F bond_accel(0,0,0);
+        Vec3F bond_accel(0,0,0);
         visit_all_coords_1_around(base_coord,[&](CubeCoord offset){
             CubeCoord new_coord = base_coord + offset;
             float bond_val = this->get_bond(base_coord,offset);
-            bond_accel += bond_val * glm::normalize(coord_to_vec(offset));
-        });*/
+            bond_accel += energy_to_accel(bond_val,this->get(base_coord).data.mass()) * glm::normalize(coord_to_vec(offset));
+        });
+        QuantityInfo total_quanity = this->get(base_coord).data;
+        Vec3F total_accel_val = Vec3F(0,0,0);
         visit_all_adjacent(base_coord,[&](CubeCoord adj_coord, Vec3F cube_dir){
             CubeChangeInfo change_info = this->get(base_coord).get_bordering_quantity_vel(this->get(adj_coord),cube_dir);
+
             QuantityInfo add_vec = change_info.quantity_shift;
-            QuantityInfo & update_info = update_data.get(base_coord).data;
 
             if(is_valid_cube(adj_coord)){
                 CubeChangeInfo adj_change_info = this->get(adj_coord).get_bordering_quantity_vel(this->get(base_coord),-cube_dir);
-                update_info.add(adj_change_info.quantity_shift);
-                update_info.subtract(add_vec);
 
-                update_info.vec -= quantities_calc_force(update_info.mass(),change_info.force_shift.force_vec);
-                update_info.vec += quantities_calc_force(update_info.mass(),adj_change_info.force_shift.force_vec);
+                total_accel_val += mass_force_coef(this->get(base_coord).data.mass()) *
+                        (- change_info.force_shift.force_vec + adj_change_info.force_shift.force_vec);
+
+                total_quanity.add(adj_change_info.quantity_shift);
+                total_quanity.subtract(add_vec);
             }
             else{
                 //assert(change_info.force_shift.force_vec == Vec3F(0,0,0));
@@ -217,12 +223,11 @@ void CubeData::update(CubeData & update_data){
                 QuantityInfo reflected_vector = add_vec;
                 reflected_vector.vec = reflect_vector_along(add_vec.vec,cube_dir);
 
-                update_info.add(reflected_vector);
-                update_info.subtract(add_vec);
+                total_quanity.add(reflected_vector);
+                total_quanity.subtract(add_vec);
             }
         });
+        total_quanity.vec += total_accel_val + global_gravity_vector + bond_accel;
+        update_data.get(base_coord).data = total_quanity;
     });
-    for(CubeInfo & info : update_data.data){
-        info.update_velocity_global();
-    }
 }

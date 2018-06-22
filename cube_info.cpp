@@ -8,7 +8,7 @@ CubeInfo::CubeInfo(bool in_is_border){
     is_border = in_is_border;
     if(!is_border){
         data.air_mass = 0;//rand() / float(RAND_MAX);
-        data.liquid_mass = 20*rand() / float(RAND_MAX);
+        data.liquid_mass = 100*rand() / float(RAND_MAX);
         data.solid_mass = 0;//100*rand() / float(RAND_MAX);
     }
     else{
@@ -25,7 +25,7 @@ float square(float x){
     return x * x;
 }
 
-CubeChangeInfo CubeInfo::get_bordering_quantity_vel(const CubeInfo & other_cube,glm::vec3 cube_direction){
+CubeChangeInfo CubeInfo::get_bordering_quantity_vel(const CubeInfo & other_cube,glm::vec3 cube_direction)const{
     /*
     params: cube_direction: the unit vector pointing from this to the "bordering" cube
             bordering: a cube that is adjacent to the current one
@@ -77,10 +77,6 @@ CubeChangeInfo CubeInfo::get_bordering_quantity_vel(const CubeInfo & other_cube,
 
     VectorAttraction attract_info{liquid_attraction_vector};
     return CubeChangeInfo{attract_info,final_quantity};
-}
-void CubeInfo::update_velocity_global(){
-    //constant acceleration
-    this->data.vec += glm::vec3(0,-gravity_constant*seconds_per_calc,0);
 }
 RGBVal CubeInfo::color(){
     return RGBVal{1.0f-std::min(abs(data.air_mass)/2.0f,1.0f),1.0f-std::min(abs(data.solid_mass)/1000.0f,1.0f),1.0f-std::min(abs(data.liquid_mass)/800.0f,1.0f),1.0};//,std::min(abs(data.air_mass)/2.0f,1.0f)};
