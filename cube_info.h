@@ -24,15 +24,13 @@ struct QuantityInfo{
         return air_mass + liquid_mass + solid_mass;
     }
     void add(QuantityInfo addval){
-        this->vec = abs((this->mass() + addval.mass())) < 10e-13f ?
+        this->vec = abs((this->mass() + addval.mass())) < 10e-15f ?
                         Vec3F(0,0,0) :
                         (this->vec * this->mass() + addval.vec * addval.mass()) / (this->mass() + addval.mass());
 
         this->air_mass += addval.air_mass;
         this->liquid_mass += addval.liquid_mass;
         this->solid_mass += addval.solid_mass;
-        //assert(this->air_mass >= 0);
-        //assert(this->liquid_mass >= 0);
     }
     void subtract(QuantityInfo subval){
         QuantityInfo add_neg_val = subval;
@@ -49,6 +47,9 @@ struct QuantityInfo{
         cout << to_string(this->vec) << endl;
     }
 };
+inline float square(float x){
+    return x * x;
+}
 struct CubeChangeInfo{
     VectorAttraction force_shift;
     QuantityInfo quantity_shift;

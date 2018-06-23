@@ -2,10 +2,17 @@
 #include <iostream>
 #include "parameters.h"
 #include "glm/gtx/string_cast.hpp"
+#include "glm/gtx/norm.hpp"
 using namespace std;
 
 constexpr int NUM_BONDS_PER_CUBE = 13;
 
+int sqr(int x){
+    return x * x;
+}
+int sqr_dist(CubeCoord c){
+    return sqr(c.x) + sqr(c.y) + sqr(c.z);
+}
 Vec3F coord_to_vec(CubeCoord c){
     return Vec3F(c.x,c.y,c.z);
 }
@@ -77,16 +84,27 @@ int int_pow3(int x){
 }
 CubeData::CubeData():
     data(int_pow3(size_cube)),
-    bond_data(NUM_BONDS_PER_CUBE*int_pow3(size_cube+1)){
+    bond_data(NUM_BONDS_PER_CUBE*int_pow3(size_cube+1),0){
     for(auto & a : data){
-        //a.data.solid_mass = 0;
+        a.data.solid_mass = 0;
     }
-   /* visit_all_coords_between(CubeCoord{2,2,2},CubeCoord{6,6,6},[&](CubeCoord coord){
-        this->get(coord).data.solid_mass = 100;
+    float solid_mass_start_val = 100;
+    visit_all_coords_between(CubeCoord{2,2,2},CubeCoord{6,6,6},[&](CubeCoord coord){
+        this->get(coord).data.solid_mass = solid_mass_start_val;
     });
     visit_all_coords_between(CubeCoord{2,12,2},CubeCoord{6,18,6},[&](CubeCoord coord){
-        this->get(coord).data.solid_mass = 100;
-    });*/
+        this->get(coord).data.solid_mass = solid_mass_start_val;
+    });
+    visit_all_coords([&](CubeCoord coord){
+        visit_all_coords_1_around(coord,[&](CubeCoord offset){
+            CubeCoord new_coord = coord + offset;
+            float bond_strength = bond_strength_coef *
+                    this->get(coord).data.solid_mass *
+                    this->get(new_coord).data.solid_mass /
+                    square(solid_mass_start_val);
+            this->get_bond(coord,offset) = bond_strength;
+        });
+    });
     //get(10,10,10).data.air_mass = 100;
     //get(5,5,5).data.liquid_mass = 100;
 }
@@ -192,21 +210,48 @@ float mass_force_coef(float one_mass){
 float energy_to_accel(float energy_val, float mass){
     return sqrt(2.0f * energy_val / mass);
 }
+void CubeData::update_bonds_with_mass_changep(CubeCoord source, CubeCoord dest, float solid_quantity_moved){
+    //bond energy = 1/2 * mass * dist^2
+    CubeCoord direction = dest - source;
+    float prop_mass_moved = solid_quantity_moved / max(0.00001f,this->get(source).data.solid_mass);
+    visit_all_coords_1_around(source,[&](CubeCoord old_offset){
+        CubeCoord new_offset = old_offset + direction;
+        //CubeCoord bond_endpoint = source + old_offset;
+        float bond_val_moved = prop_mass_moved*this->get_bond(source,old_offset);
+        int old_distance = sqr_dist(old_offset);
+        int new_distance = sqr_dist(new_offset);
+        if(new_distance == 0){
+            // no bond
+        }
+        else if(new_distance <= 3){
+            //bond energy ~ dist^2
+            float new_bond_val = bond_val_moved * sqr(float(new_distance) / float(old_distance));
+            this->get_bond(dest,new_offset) += new_bond_val;
+        }
+        else{
+            //bonds get broken if distance is too great, energy is simply lost
+        }
+        this->get_bond(source,old_offset) -= bond_val_moved;
+    });
+    //create a bond between new location and old location
+    this->get_bond(source,direction) += new_bond_value_constant * prop_mass_moved * (1-prop_mass_moved);
+}
 void CubeData::update(CubeData & update_data){
     Vec3F global_gravity_vector = Vec3F(0,-gravity_constant * seconds_per_calc,0);
     visit_all_coords([&](CubeCoord base_coord){
         Vec3F bond_accel(0,0,0);
         visit_all_coords_1_around(base_coord,[&](CubeCoord offset){
-            CubeCoord new_coord = base_coord + offset;
             float bond_val = this->get_bond(base_coord,offset);
-            bond_accel += energy_to_accel(bond_val,this->get(base_coord).data.mass()) * glm::normalize(coord_to_vec(offset));
+            bond_accel += bond_accel_constant * energy_to_accel(bond_val,this->get(base_coord).data.mass()) * glm::normalize(coord_to_vec(offset));
         });
-        QuantityInfo total_quanity = this->get(base_coord).data;
+        QuantityInfo total_quanity = this->get(base_coord).data;//{0,0,0,Vec3F(0,0,0)};
         Vec3F total_accel_val = Vec3F(0,0,0);
         visit_all_adjacent(base_coord,[&](CubeCoord adj_coord, Vec3F cube_dir){
             CubeChangeInfo change_info = this->get(base_coord).get_bordering_quantity_vel(this->get(adj_coord),cube_dir);
 
             QuantityInfo add_vec = change_info.quantity_shift;
+
+            QuantityInfo shift_across_border = {1,0,0,Vec3F(0,0,0)};
 
             if(is_valid_cube(adj_coord)){
                 CubeChangeInfo adj_change_info = this->get(adj_coord).get_bordering_quantity_vel(this->get(base_coord),-cube_dir);
@@ -216,6 +261,9 @@ void CubeData::update(CubeData & update_data){
 
                 total_quanity.add(adj_change_info.quantity_shift);
                 total_quanity.subtract(add_vec);
+
+                float solid_mass_delta = adj_change_info.quantity_shift.solid_mass + add_vec.solid_mass;
+                this->update_bonds_with_mass_changep(adj_coord,base_coord,solid_mass_delta);
             }
             else{
                 //assert(change_info.force_shift.force_vec == Vec3F(0,0,0));
@@ -227,6 +275,10 @@ void CubeData::update(CubeData & update_data){
                 total_quanity.subtract(add_vec);
             }
         });
+        if(glm::length2(bond_accel) > 0.001){
+            cout << to_string(bond_accel) <<endl;
+        }
+        //total_quanity.add();
         total_quanity.vec += total_accel_val + global_gravity_vector + bond_accel;
         update_data.get(base_coord).data = total_quanity;
     });

@@ -7,9 +7,9 @@ using namespace  std;
 CubeInfo::CubeInfo(bool in_is_border){
     is_border = in_is_border;
     if(!is_border){
-        data.air_mass = 0;//rand() / float(RAND_MAX);
-        data.liquid_mass = 100*rand() / float(RAND_MAX);
-        data.solid_mass = 0;//100*rand() / float(RAND_MAX);
+        data.air_mass = 0*rand() / float(RAND_MAX);
+        data.liquid_mass = 0*rand() / float(RAND_MAX);
+        data.solid_mass = 0*rand() / float(RAND_MAX);
     }
     else{
         data.air_mass = 0;
@@ -20,9 +20,6 @@ CubeInfo::CubeInfo(bool in_is_border){
 }
 float surface_area(float quantity){
     return pow(quantity,1.0/3.0);//TODO: check effect of turning this to 2/3, like surface area is supposed to be.
-}
-float square(float x){
-    return x * x;
 }
 
 CubeChangeInfo CubeInfo::get_bordering_quantity_vel(const CubeInfo & other_cube,glm::vec3 cube_direction)const{

@@ -7,6 +7,10 @@ constexpr float solid_pressure_coef = 0.5;
 constexpr float bond_strength_coef = 50;
 constexpr float gass_pressure_coef = 10.0;
 constexpr float gravity_constant = 1000;
+constexpr float bond_accel_constant = 10;
+
+//this should be a cell dependent variable
+constexpr float new_bond_value_constant = 1;
 
 
 //important graphical constants

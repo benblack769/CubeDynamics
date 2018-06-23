@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <vector>
 
-constexpr int size_cube = 30;
+constexpr int size_cube = 20;
 class CubeData{
     std::vector<CubeInfo> data;
     std::vector<float> bond_data;
@@ -15,4 +15,5 @@ public:
     float & get_bond(CubeCoord coord, CubeCoord dir);
     std::vector<FaceDrawInfo> get_exposed_faces();
     void update(CubeData & update_data);
+    void update_bonds_with_mass_changep(CubeCoord source, CubeCoord dest, float solid_quantity_moved);
 };
