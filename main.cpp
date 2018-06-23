@@ -31,6 +31,7 @@ using namespace std;
 #include <string.h>
 #include <chrono>
 #include <ctime>
+#include <mutex>
 
 constexpr int X_WIN_SIZE = 1024;
 constexpr int Y_WIN_SIZE = 768;
@@ -157,9 +158,97 @@ void move_cursor(CameraPosition & camera_pos){
     }
 }
 
+class RenderBufferData{
+    //Assumes that the same thread does not call update_check and write values.
+protected:
+    bool has_written = false;
+    mutex has_written_lock;
+    vector<BYTE> cube_colors;
+    vector<float> cube_verticies;
+    vector<BYTE> write_cube_colors;
+    vector<float> write_cube_verticies;
+public:
+    bool update_check(){
+        if(has_written_lock.try_lock()){
+            if(has_written){
+                has_written = false;
+
+                cube_colors.swap(write_cube_colors);
+                cube_verticies.swap(write_cube_verticies);
+            }
+            has_written_lock.unlock();
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+    vector<BYTE> & get_colors(){
+        return cube_colors;
+    }
+    vector<float> & get_verticies(){
+        return cube_verticies;
+    }
+    void set_vals(vector<BYTE> & colors,vector<float> & verticies){
+        if(has_written_lock.try_lock()){
+            has_written = false;
+            has_written_lock.unlock();
+        }
+        write_cube_colors = colors;
+        write_cube_verticies = verticies;
+        has_written_lock.lock();
+        has_written = true;
+        has_written_lock.unlock();
+    }
+} all_buffer_data;
+
+
+void cell_update_main_loop(){
+    FrameRateControl cell_automata_update_count(1000.0);
+    FrameRateControl update_speed_output_count(1.0);
+    FrameRateControl cube_update_count(20.0);
+
+    int num_cube_updates = 0;
+    CubeData all_cubes;
+
+    while(true){
+        cout << "arg!" << endl;
+        if(update_speed_output_count.should_render()){
+            double duration_since_render = update_speed_output_count.duration_since_render();
+            update_speed_output_count.rendered();
+            cout << "frames per second = " << num_cube_updates / duration_since_render << endl;
+            num_cube_updates = 0;
+        }
+        if(cell_automata_update_count.should_render()){
+            cell_automata_update_count.rendered();
+            CubeData update_data;
+            all_cubes.update(update_data);
+            all_cubes = update_data;
+            ++num_cube_updates;
+        }
+        if(cube_update_count.should_render()){
+            cube_update_count.rendered();
+            vector<FaceDrawInfo> draw_info = all_cubes.get_exposed_faces();
+            vector<BYTE> cube_colors;
+            vector<float> cube_verticies;
+            for(FaceDrawInfo & info : draw_info){
+                info.add_to_buffer(cube_colors,cube_verticies);
+            }
+            all_buffer_data.set_vals(cube_colors,cube_verticies);
+        }
+        if(!cube_update_count.should_render() &&
+                !cell_automata_update_count.should_render() &&
+                !update_speed_output_count.should_render()){
+        //    cube_update_count.spin_sleep();
+        }
+    }
+}
 int main( void )
 {
     srand(clock());
+
+    std::thread cell_loop_thread(cell_update_main_loop);
+
     setup_window();
     //glDepthFunc(GL_LESS);
     // Dark blue background
@@ -191,55 +280,31 @@ int main( void )
 
     CameraPosition camera_pos(glm::vec3(50,20,-30),glm::vec3(-1,0,0));
 
-
-    CubeData all_cubes;
-
     GLuint vertexbuffer;
     glGenBuffers(1, &vertexbuffer);
 
 	GLuint colorbuffer;
-	glGenBuffers(1, &colorbuffer);
-
-    vector<BYTE> cube_colors;
-    vector<float> cube_verticies;
+    glGenBuffers(1, &colorbuffer);
 
     FrameRateControl basic_frame_count(30.0);
     FrameRateControl cube_update_count(20.0);
-    FrameRateControl cell_automata_update_count(1000.0);
-    FrameRateControl update_speed_output_count(1.0);
-    int num_cube_updates = 0;
+    int current_cube_verticy_count = 0;
     do{
         //sleeps when frame was recently rendered to prevent spinning
        // basic_frame_count.render_pause();
 
-        if(update_speed_output_count.should_render()){
-            double duration_since_render = update_speed_output_count.duration_since_render();
-            update_speed_output_count.rendered();
-            cout << "frames per second = " << num_cube_updates / duration_since_render << endl;
-            num_cube_updates = 0;
-        }
-        if(cell_automata_update_count.should_render()){
-            cell_automata_update_count.rendered();
-            CubeData update_data;
-            all_cubes.update(update_data);
-            all_cubes = update_data;
-            ++num_cube_updates;
-        }
         if(cube_update_count.should_render()){
             cube_update_count.rendered();
 
-            vector<FaceDrawInfo> draw_info = all_cubes.get_exposed_faces();
-            cube_colors.clear();
-            cube_verticies.clear();
-            for(FaceDrawInfo & info : draw_info){
-                info.add_to_buffer(cube_colors,cube_verticies);
-            }
+            all_buffer_data.update_check();
+
+            current_cube_verticy_count = all_buffer_data.get_verticies().size();
 
             glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(float)*cube_verticies.size(), cube_verticies.data(), GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(float)*all_buffer_data.get_verticies().size(), all_buffer_data.get_verticies().data(), GL_DYNAMIC_DRAW);
 
             glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(BYTE)*cube_colors.size(), cube_colors.data(), GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(BYTE)*all_buffer_data.get_colors().size(), all_buffer_data.get_colors().data(), GL_DYNAMIC_DRAW);
         }
         if(basic_frame_count.should_render()){
             basic_frame_count.rendered();
@@ -284,7 +349,7 @@ int main( void )
             );
 
             // Draw the triangle !
-            glDrawArrays(GL_TRIANGLES, 0, cube_verticies.size()/3); // 3 indices starting at 0 -> 1 triangle
+            glDrawArrays(GL_TRIANGLES, 0, current_cube_verticy_count/3); // 3 indices starting at 0 -> 1 triangle
 
             glDisableVertexAttribArray(vertexPosition_modelspaceID);
             glDisableVertexAttribArray(vertexColorID);
@@ -297,8 +362,7 @@ int main( void )
         vector<float> cube_verticies;
 
         if(!basic_frame_count.should_render() &&
-                !cube_update_count.should_render() &&
-                !cell_automata_update_count.should_render()){
+                !cube_update_count.should_render()){
             basic_frame_count.spin_sleep();
         }
 
