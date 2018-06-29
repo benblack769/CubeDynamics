@@ -79,5 +79,5 @@ RGBVal CubeInfo::color(){
     return RGBVal{1.0f-std::min(abs(data.air_mass)/2.0f,1.0f),1.0f-std::min(abs(data.solid_mass)/1000.0f,1.0f),1.0f-std::min(abs(data.liquid_mass)/800.0f,1.0f),1.0};//,std::min(abs(data.air_mass)/2.0f,1.0f)};
 }
 bool CubeInfo::is_transparent(){
-    return data.mass() < 0.03;
+    return data.mass() < 0.3;
 }

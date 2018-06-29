@@ -115,7 +115,7 @@ CubeData::CubeData():
             float bond_strength = bond_strength_coef *
                     this->get(coord).data.solid_mass *
                     this->get(new_coord).data.solid_mass /
-                    square(solid_mass_start_val);
+                    (square(solid_mass_start_val) * (1+sqr_len(offset)));
             this->get_bond(coord,offset) = bond_strength;
         });
     });
@@ -181,12 +181,15 @@ float * exch_data_at(vector<float> & exch_data,CubeCoord c){
                 &exch_data.at((c.x*size_cube*size_cube + c.y*size_cube + c.z) * EXCHANGE_LEN):
                 border_weights;
 }
-float calc_static_exchanged_value(float prev_volume,float * exch_vec){
+void normalize_exchange(float * exch){
     float sum = 0;
-    for(int i = 0; i < SIDES_ON_CUBE; i++){
-        sum += exch_vec[i];
+    for(int i = 0; i < EXCHANGE_LEN; i++){
+        sum += exch[i];
     }
-    return prev_volume - sum;
+    float inv_val = 1.0f/max(0.0000001f,sum);
+    for(int i = 0; i < EXCHANGE_LEN; i++){
+        exch[i] *= inv_val;
+    }
 }
 int counter = 0;
 void CubeData::update(CubeData & update_data){
@@ -233,8 +236,8 @@ void CubeData::update(CubeData & update_data){
                 total_quanity.add(adj_change_info.quantity_shift);
                 total_quanity.subtract(add_vec);
 
-                float solid_mass_delta = adj_change_info.quantity_shift.solid_mass + add_vec.solid_mass;
-                base_exchange_data[offset_index] = max(0.0f,solid_mass_delta);
+                float solid_mass_delta = add_vec.solid_mass;
+                base_exchange_data[offset_index] = solid_mass_delta;
                 total_exchange_data += solid_mass_delta;
             }
             else{
@@ -249,13 +252,18 @@ void CubeData::update(CubeData & update_data){
         });
 
         base_exchange_data[STATIC_EXCH_IDX] = this->get(base_coord).data.solid_mass - total_exchange_data;
-        //assert(base_exchange_data[STATIC_EXCH_IDX] >= -0.0001);
-        base_exchange_data[STATIC_EXCH_IDX]  = max(base_exchange_data[STATIC_EXCH_IDX] ,0.0f);
+        assert(base_exchange_data[STATIC_EXCH_IDX] >= 0);
+        normalize_exchange(base_exchange_data);
+        //base_exchange_data[STATIC_EXCH_IDX] = max(base_exchange_data[STATIC_EXCH_IDX], 0.0f);
 
         //total_quanity.add();
         total_quanity.vec += total_accel_val + global_gravity_vector + bond_accel;
 
         if(counter % 1000 == 0){
+            cout << "Arg" << endl;
+            for(int i = 0; i < 7; i++){
+                cout << base_exchange_data[i] << endl;
+            }
             cout << to_string(bond_accel) <<endl;
         }
         counter++;
@@ -270,12 +278,12 @@ void CubeData::update(CubeData & update_data){
             float * bond_ev_exch_data = exch_data_at(all_exchange_data,bond_eval_coord);
             visit_all_adjacent_plus_center([&](int old_base_idx, CubeCoord old_base_offset){
                 CubeCoord old_base = base_coord + old_base_offset;
-                float amnt_leaving_old_base = base_exchange_data[old_base_idx];
-                float prop_leaving_old_base = amnt_leaving_old_base / max(0.00001f,this->get(old_base).data.solid_mass);
+                float prop_leaving_old_base = base_exchange_data[old_base_idx];
+                //float prop_leaving_old_base = amnt_leaving_old_base / max(0.00001f,this->get(old_base).data.solid_mass);
                 visit_all_adjacent_plus_center([&](int old_adj_idx, CubeCoord old_adj_offset){
                     CubeCoord old_adj = bond_eval_coord + old_adj_offset;
-                    float amnt_leaving_old_adj = bond_ev_exch_data[old_adj_idx];
-                    float prop_leaving_old_adj = amnt_leaving_old_adj / max(0.00001f,this->get(old_adj).data.solid_mass);
+                    float prop_leaving_old_adj = bond_ev_exch_data[old_adj_idx];
+                    //float prop_leaving_old_adj = amnt_leaving_old_adj / max(0.00001f,this->get(old_adj).data.solid_mass);
                     CubeCoord dir = old_adj - old_base;
                     if(is_valid_bond(dir)){
                         float old_bond_strength = this->get_bond(old_base,dir);
@@ -304,7 +312,7 @@ void CubeData::update(CubeData & update_data){
             CubeCoord other_offset = - offset;
             float one_bond = update_data.get_bond(base_coord,offset);
             float other_bond = update_data.get_bond(other_coord,other_offset);
-            assert(abs(one_bond - other_bond) < 0.0001 || abs(one_bond) * 0.99 < abs(other_bond));
+            assert(abs(one_bond - other_bond) < 0.0001f || abs(one_bond) * 0.99 <= abs(other_bond));
             float average_bond = (one_bond + other_bond) / 2;
             update_data.get_bond(base_coord,offset) = average_bond;
             update_data.get_bond(other_coord,other_offset) = average_bond;
