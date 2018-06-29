@@ -260,11 +260,6 @@ void CubeData::update(CubeData & update_data){
         total_quanity.vec += total_accel_val + global_gravity_vector + bond_accel;
 
         if(counter % 1000 == 0){
-            cout << "Arg" << endl;
-            for(int i = 0; i < 7; i++){
-                cout << base_exchange_data[i] << endl;
-            }
-            cout << to_string(bond_accel) <<endl;
         }
         counter++;
         update_data.get(base_coord).data = total_quanity;
