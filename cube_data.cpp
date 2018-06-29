@@ -97,13 +97,16 @@ CubeData::CubeData():
     data(int_pow3(size_cube)),
     bond_data(NUM_BONDS_PER_CUBE*int_pow3(size_cube),0){
     for(auto & a : data){
-        a.data.solid_mass = 0.01;
+        a.data.solid_mass = 0.001;
     }
     float solid_mass_start_val = 100;
     visit_all_coords_between(CubeCoord{2,2,2},CubeCoord{6,6,6},[&](CubeCoord coord){
         this->get(coord).data.solid_mass = solid_mass_start_val;
     });
-    visit_all_coords_between(CubeCoord{2,12,2},CubeCoord{6,18,6},[&](CubeCoord coord){
+    visit_all_coords_between(CubeCoord{4,12,4},CubeCoord{8,18,8},[&](CubeCoord coord){
+        this->get(coord).data.solid_mass = solid_mass_start_val;
+    });
+    visit_all_coords_between(CubeCoord{15,1,15},CubeCoord{19,5,19},[&](CubeCoord coord){
         this->get(coord).data.solid_mass = solid_mass_start_val;
     });
     visit_all_coords([&](CubeCoord coord){
@@ -168,7 +171,7 @@ float mass_force_coef(float one_mass){
     return speed_1;
 }
 float energy_to_accel(float energy_val, float mass){
-    return sqrt(2.0f * energy_val / mass);
+    return sqrt(2.0f * energy_val / max(0.0001f,mass));
 }
 constexpr int EXCHANGE_LEN = 7;
 constexpr int STATIC_EXCH_IDX = EXCHANGE_LEN-1;
@@ -183,7 +186,7 @@ float calc_static_exchanged_value(float prev_volume,float * exch_vec){
     for(int i = 0; i < SIDES_ON_CUBE; i++){
         sum += exch_vec[i];
     }
-    return sum;
+    return prev_volume - sum;
 }
 int counter = 0;
 void CubeData::update(CubeData & update_data){
@@ -202,20 +205,15 @@ void CubeData::update(CubeData & update_data){
                 float bond_val = this->get_bond(base_coord,offset);
                 float bond_accel_mag = distance * energy_to_accel(bond_val,this->get(base_coord).data.mass());
                 glm::vec3 accel_bond_val = (bond_accel_mag / sqrt(distance)) * coord_to_vec(offset);
-
-                if(accel_bond_val.y != accel_bond_val.y){
-                    cout << "nanned!!!!" << endl;
-                    cout << to_string(offset) <<endl;
-                    cout << to_string(base_coord) <<endl;
-                }
                 bond_accel += accel_bond_val;
             }
         });
 
-        QuantityInfo total_quanity = this->get(base_coord).data;//{0,0,0,Vec3F(0,0,0)};
+        QuantityInfo total_quanity = this->get(base_coord).data;
         Vec3F total_accel_val = Vec3F(0,0,0);
 
         float * base_exchange_data = exch_data_at(all_exchange_data,base_coord);
+        float total_exchange_data = 0;
 
         visit_all_adjacent([&](int offset_index, CubeCoord offset){
             Vec3F cube_dir = coord_to_vec(offset);
@@ -236,8 +234,8 @@ void CubeData::update(CubeData & update_data){
                 total_quanity.subtract(add_vec);
 
                 float solid_mass_delta = adj_change_info.quantity_shift.solid_mass + add_vec.solid_mass;
-                //this->update_bonds_with_mass_changep(adj_coord,base_coord,solid_mass_delta);
-                base_exchange_data[offset_index] = solid_mass_delta;
+                base_exchange_data[offset_index] = max(0.0f,solid_mass_delta);
+                total_exchange_data += solid_mass_delta;
             }
             else{
                 //assert(change_info.force_shift.force_vec == Vec3F(0,0,0));
@@ -250,14 +248,16 @@ void CubeData::update(CubeData & update_data){
             }
         });
 
-        base_exchange_data[STATIC_EXCH_IDX] = calc_static_exchanged_value(this->get(base_coord).data.mass(),base_exchange_data);
+        base_exchange_data[STATIC_EXCH_IDX] = this->get(base_coord).data.solid_mass - total_exchange_data;
+        //assert(base_exchange_data[STATIC_EXCH_IDX] >= -0.0001);
+        base_exchange_data[STATIC_EXCH_IDX]  = max(base_exchange_data[STATIC_EXCH_IDX] ,0.0f);
 
-        if(bond_accel.y < -0.001){
-            cout << to_string(bond_accel) <<endl;
-        }
         //total_quanity.add();
         total_quanity.vec += total_accel_val + global_gravity_vector + bond_accel;
 
+        if(counter % 1000 == 0){
+            cout << to_string(bond_accel) <<endl;
+        }
         counter++;
         update_data.get(base_coord).data = total_quanity;
     });
@@ -285,20 +285,31 @@ void CubeData::update(CubeData & update_data){
                 });
             });
             update_data.get_bond(base_coord,bond_offset) = new_bond_strength;
+
+            if(counter % 10000 == 0){
+                //cout << new_bond_strength <<endl;
+            }
+            if(new_bond_strength < 0){
+                cout << new_bond_strength <<endl;
+            }
+            counter++;
         });
     });
 
+    float max_bond_stren = 0;
     //bond similarity assertion
     visit_all_coords([&](CubeCoord base_coord){
         visit_all_coords_1_box([&](CubeCoord offset){
             CubeCoord other_coord = base_coord + offset;
             CubeCoord other_offset = - offset;
-            float & one_bond = update_data.get_bond(base_coord,offset);
-            float & other_bond = update_data.get_bond(other_coord,other_offset);
-            assert((one_bond - 0.0001 < other_bond  && other_bond - 0.0001 < one_bond) || abs(one_bond) * 0.99 < abs(other_bond));
+            float one_bond = update_data.get_bond(base_coord,offset);
+            float other_bond = update_data.get_bond(other_coord,other_offset);
+            assert(abs(one_bond - other_bond) < 0.0001 || abs(one_bond) * 0.99 < abs(other_bond));
             float average_bond = (one_bond + other_bond) / 2;
-            one_bond = average_bond;
-            other_bond = average_bond;
+            update_data.get_bond(base_coord,offset) = average_bond;
+            update_data.get_bond(other_coord,other_offset) = average_bond;
+            max_bond_stren = max(max_bond_stren,one_bond);
         });
     });
+    cout << max_bond_stren << endl;
 }

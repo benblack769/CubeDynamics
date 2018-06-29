@@ -60,9 +60,9 @@ CubeChangeInfo CubeInfo::get_bordering_quantity_vel(const CubeInfo & other_cube,
     float basic_liquid_amt = max(0.0f,glm::dot(cube_direction,total_liquid_motion));
     float basic_solid_amt = max(0.0f,glm::dot(cube_direction,total_solid_motion));
 
-    float amt_air_given = std::min(basic_air_amt * this->data.air_mass * seconds_per_calc, this->data.air_mass/(0.01f+float(SIDES_ON_CUBE)));
-    float amt_liquid_given = std::min(basic_liquid_amt * this->data.liquid_mass * seconds_per_calc,this->data.liquid_mass/(0.01f+float(SIDES_ON_CUBE)));
-    float amt_solid_given = std::min(basic_solid_amt * this->data.solid_mass * seconds_per_calc,this->data.solid_mass/(0.01f+float(SIDES_ON_CUBE)));
+    float amt_air_given = std::min(basic_air_amt * this->data.air_mass * seconds_per_calc, this->data.air_mass/(-0.01f+float(SIDES_ON_CUBE)));
+    float amt_liquid_given = std::min(basic_liquid_amt * this->data.liquid_mass * seconds_per_calc,this->data.liquid_mass/(-0.01f+float(SIDES_ON_CUBE)));
+    float amt_solid_given = std::min(basic_solid_amt * this->data.solid_mass * seconds_per_calc,this->data.solid_mass/(-0.01f+float(SIDES_ON_CUBE)));
 
     QuantityInfo air_transfer_quantity = {amt_air_given,0,0, total_air_motion};
     QuantityInfo liquid_transfer_quantity = {0,amt_liquid_given,0, total_liquid_motion};
