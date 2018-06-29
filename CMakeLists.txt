@@ -21,6 +21,7 @@ add_executable(squares
     cube_coords.cpp
     cube_info.cpp
     cube_data.cpp
+    cell_update_main.cpp
 )
 target_link_libraries(squares
     glfw3
