@@ -248,6 +248,7 @@ int main( void )
     srand(clock());
 
     std::thread cell_loop_thread(cell_update_main_loop);
+    cell_loop_thread.detach();
 
     setup_window();
     //glDepthFunc(GL_LESS);
