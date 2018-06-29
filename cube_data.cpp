@@ -48,13 +48,11 @@ void visit_all_coords_between(CubeCoord lower,CubeCoord upper,visit_fn_ty visit_
     }
 }
 template<class visit_fn_ty>
-void visit_all_coords_1_around(visit_fn_ty visit_fn){
+void visit_all_coords_1_box(visit_fn_ty visit_fn){
     for(int i = -1; i <= 1; i++){
         for(int j = -1; j <= 1; j++){
             for(int k = -1; k <= 1; k++){
-                if(i != 0 || j != 0 || k != 0){
-                    visit_fn(CubeCoord{i,j,k});
-                }
+                visit_fn(CubeCoord{i,j,k});
             }
         }
     }
@@ -99,7 +97,7 @@ CubeData::CubeData():
     data(int_pow3(size_cube)),
     bond_data(NUM_BONDS_PER_CUBE*int_pow3(size_cube),0){
     for(auto & a : data){
-        a.data.solid_mass = 0;
+        a.data.solid_mass = 0.01;
     }
     float solid_mass_start_val = 100;
     visit_all_coords_between(CubeCoord{2,2,2},CubeCoord{6,6,6},[&](CubeCoord coord){
@@ -109,7 +107,7 @@ CubeData::CubeData():
         this->get(coord).data.solid_mass = solid_mass_start_val;
     });
     visit_all_coords([&](CubeCoord coord){
-        visit_all_coords_1_around([&](CubeCoord offset){
+        visit_all_coords_1_box([&](CubeCoord offset){
             CubeCoord new_coord = coord + offset;
             float bond_strength = bond_strength_coef *
                     this->get(coord).data.solid_mass *
@@ -187,6 +185,7 @@ float calc_static_exchanged_value(float prev_volume,float * exch_vec){
     }
     return sum;
 }
+int counter = 0;
 void CubeData::update(CubeData & update_data){
     Vec3F global_gravity_vector = Vec3F(0,-gravity_constant * seconds_per_calc,0);
 
@@ -195,14 +194,23 @@ void CubeData::update(CubeData & update_data){
     visit_all_coords([&](CubeCoord base_coord){
 
         Vec3F bond_accel(0,0,0);
-        /*
-        visit_all_coords_1_around([&](CubeCoord offset){
+
+        visit_all_coords_1_box([&](CubeCoord offset){
             //bond energy ~ coef * distance^2
             float distance = sqr_len(offset);
-            float bond_val = this->get_bond(base_coord,offset);
-            float bond_accel_mag = distance * energy_to_accel(bond_val,this->get(base_coord).data.mass());
-            bond_accel += bond_accel_mag * glm::normalize(coord_to_vec(offset));
-        });*/
+            if(distance != 0){
+                float bond_val = this->get_bond(base_coord,offset);
+                float bond_accel_mag = distance * energy_to_accel(bond_val,this->get(base_coord).data.mass());
+                glm::vec3 accel_bond_val = (bond_accel_mag / sqrt(distance)) * coord_to_vec(offset);
+
+                if(accel_bond_val.y != accel_bond_val.y){
+                    cout << "nanned!!!!" << endl;
+                    cout << to_string(offset) <<endl;
+                    cout << to_string(base_coord) <<endl;
+                }
+                bond_accel += accel_bond_val;
+            }
+        });
 
         QuantityInfo total_quanity = this->get(base_coord).data;//{0,0,0,Vec3F(0,0,0)};
         Vec3F total_accel_val = Vec3F(0,0,0);
@@ -244,17 +252,19 @@ void CubeData::update(CubeData & update_data){
 
         base_exchange_data[STATIC_EXCH_IDX] = calc_static_exchanged_value(this->get(base_coord).data.mass(),base_exchange_data);
 
-        if(glm::length2(bond_accel) > 0.001){
+        if(bond_accel.y < -0.001){
             cout << to_string(bond_accel) <<endl;
         }
         //total_quanity.add();
         total_quanity.vec += total_accel_val + global_gravity_vector + bond_accel;
+
+        counter++;
         update_data.get(base_coord).data = total_quanity;
     });
-/*
+
     visit_all_coords([&](CubeCoord base_coord){
         float * base_exchange_data = exch_data_at(all_exchange_data,base_coord);
-        visit_all_coords_1_around([&](CubeCoord bond_offset){
+        visit_all_coords_1_box([&](CubeCoord bond_offset){
             CubeCoord bond_eval_coord = base_coord + bond_offset;
             float new_bond_strength = 0;
             float * bond_ev_exch_data = exch_data_at(all_exchange_data,bond_eval_coord);
@@ -269,12 +279,26 @@ void CubeData::update(CubeData & update_data){
                     CubeCoord dir = old_adj - old_base;
                     if(is_valid_bond(dir)){
                         float old_bond_strength = this->get_bond(old_base,dir);
-                        float amnt_bond_moved = old_bond_strength;
+                        float amnt_bond_moved = old_bond_strength * prop_leaving_old_base * prop_leaving_old_adj;
                         new_bond_strength += amnt_bond_moved;
                     }
                 });
             });
             update_data.get_bond(base_coord,bond_offset) = new_bond_strength;
         });
-    });*/
+    });
+
+    //bond similarity assertion
+    visit_all_coords([&](CubeCoord base_coord){
+        visit_all_coords_1_box([&](CubeCoord offset){
+            CubeCoord other_coord = base_coord + offset;
+            CubeCoord other_offset = - offset;
+            float & one_bond = update_data.get_bond(base_coord,offset);
+            float & other_bond = update_data.get_bond(other_coord,other_offset);
+            assert((one_bond - 0.0001 < other_bond  && other_bond - 0.0001 < one_bond) || abs(one_bond) * 0.99 < abs(other_bond));
+            float average_bond = (one_bond + other_bond) / 2;
+            one_bond = average_bond;
+            other_bond = average_bond;
+        });
+    });
 }

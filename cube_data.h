@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <vector>
 
-constexpr int size_cube = 100;
+constexpr int size_cube = 22;
 class CubeData{
     std::vector<CubeInfo> data;
     std::vector<float> bond_data;
