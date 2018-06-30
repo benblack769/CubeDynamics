@@ -24,8 +24,7 @@ void cell_update_main_loop(){
 
     vector<QuantityInfo> cpu_buf = create_data_vec();
     all_cubes_buf.write_buffer(cpu_buf);
-    //update_buf.write_buffer(cpu_buf);
-    cout << get(cpu_buf.data(),CubeCoord{3,1,7})->liquid_mass << endl;
+    update_buf.write_buffer(cpu_buf);
 
     int num_cube_updates = 0;
 
@@ -62,6 +61,8 @@ void cell_update_main_loop(){
         }
     }
 }
+#ifdef NO_GRAPHICS
 int main(){
     cell_update_main_loop();
 }
+#endif
