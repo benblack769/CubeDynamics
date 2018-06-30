@@ -28,6 +28,7 @@ public:
         }
     }
     void run(){
+        myqueue.enqueueBarrierWithWaitList();
         myqueue.enqueueNDRangeKernel(kern,cl::NullRange,run_range,cl::NullRange);
     }
 };
@@ -57,6 +58,11 @@ public:
     }
     cl::Buffer & k_arg(){
         return buf;
+    }
+    void copy_buffer(CLBuffer<item_ty> src_buf){
+        assert(src_buf.bufsize == this->bufsize);
+        myqueue.enqueueBarrierWithWaitList();
+        myqueue.enqueueCopyBuffer(src_buf.buf,this->buf,0,0,bufsize*sizeof(item_ty));
     }
 };
 class OpenCLExecutor{

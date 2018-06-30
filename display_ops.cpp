@@ -42,21 +42,31 @@ bool is_transparent(QuantityInfo info){
 
 QuantityInfo random_init(){
     QuantityInfo data;
-    data.air_mass = 1*rand() / float(RAND_MAX);
-    data.liquid_mass = 0*rand() / float(RAND_MAX);
+    data.air_mass = 0*rand() / float(RAND_MAX);
+    data.liquid_mass = 20*rand() / float(RAND_MAX);
     data.solid_mass = 0*rand() / float(RAND_MAX);
     data.vec = zero_vec();
     return data;
 }
-QuantityInfo * create_data(){
-    const int data_size = int_pow3(size_cube+2);
-    QuantityInfo * info = new QuantityInfo[data_size];
-    for(int i = 0; i < data_size; i++){
-        info[i] = QuantityInfo{0,0,0,zero_vec()};
+int data_size(){
+    return int_pow3(size_cube+2);
+}
+void init_data(QuantityInfo * data){
+    for(int i = 0; i < data_size(); i++){
+        data[i] = QuantityInfo{0,0,0,zero_vec()};
     }
     visit_all_coords([&](CubeCoord c){
-        *get(info,c) = random_init();
+        *get(data,c) = random_init();
     });
+}
+std::vector<QuantityInfo> create_data_vec(){
+    std::vector<QuantityInfo> quant_vec(data_size());
+    init_data(quant_vec.data());
+    return quant_vec;
+}
+QuantityInfo * create_data(){
+    QuantityInfo * info = new QuantityInfo[data_size()];
+    init_data(info);
     return info;
 }
 std::vector<FaceDrawInfo> get_exposed_faces(QuantityInfo * all_data){

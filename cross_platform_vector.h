@@ -27,3 +27,6 @@ inline Vec3F build_vec(float x, float y, float z){
 inline Vec3F coord_to_vec(CubeCoord c){
     return Vec3F(c.x,c.y,c.z,0);
 }
+inline float dot_prod(Vec3F v1, Vec3F v2){
+    return glm::dot(v1,v2);
+}
