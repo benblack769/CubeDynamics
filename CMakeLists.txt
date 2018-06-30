@@ -19,6 +19,9 @@ include_directories(external/opencl-2.2)
 
 add_executable(cl_prac
     opencl_cell_update_main.cpp
+       cube_coords.cpp
+       display_ops.cpp
+       update.cpp
 )
 target_link_libraries(cl_prac PRIVATE
     "C:/Windows/System32/OpenCL.dll"
