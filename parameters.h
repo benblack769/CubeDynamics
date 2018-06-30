@@ -6,3 +6,5 @@ constexpr float liquid_pressure_coef = 0.8;
 constexpr float solid_pressure_coef = 0.5;
 constexpr float gass_pressure_coef = 10.0;
 constexpr float gravity_constant = 1000;
+
+constexpr int size_cube = 30;

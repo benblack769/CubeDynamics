@@ -31,7 +31,7 @@ QuantityInfo * set_init(){
     OpenCLExecutor executor("update_cube.cl");
 
     CLBuffer<QuantityInfo> set_init_buf = executor.new_clbuffer<QuantityInfo>(all_cube_size);
-    CLKernel clear_kern = executor.new_clkernel("set_quantities",cl::NDRange(size_cube+2,size_cube+2,size_cube+2),{set_init_buf.k_arg()});
+    CLKernel clear_kern = executor.new_clkernel("set_quantities",cl::NDRange(size_cube,size_cube,size_cube),{set_init_buf.k_arg()});
     clear_kern.run();
     QuantityInfo * res = new QuantityInfo[all_cube_size];
     vector<QuantityInfo> quant = set_init_buf.read_buffer();
@@ -39,16 +39,16 @@ QuantityInfo * set_init(){
     return res;
 }
 void cell_update_main_loop(){
-    FrameRateControl cell_automata_update_count(1000.0);
+    FrameRateControl cell_automata_update_count(0.001);
     FrameRateControl update_speed_output_count(1.0);
     FrameRateControl cube_update_count(20.0);
 
     int num_cube_updates = 0;
     QuantityInfo * all_cubes = set_init();
-    QuantityInfo * update_tmp = set_init();
+    QuantityInfo * update_tmp = new QuantityInfo[int_pow3(size_cube+2)];
 
     while(true){
-        cout << "arg!" << endl;
+        //cout << "arg!" << endl;
         if(update_speed_output_count.should_render()){
             double duration_since_render = update_speed_output_count.duration_since_render();
             update_speed_output_count.rendered();
@@ -74,6 +74,7 @@ void cell_update_main_loop(){
         if(!cube_update_count.should_render() &&
                 !cell_automata_update_count.should_render() &&
                 !update_speed_output_count.should_render()){
+         //   cell_automata_update_count.render_pause();
         }
     }
 }

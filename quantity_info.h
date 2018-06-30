@@ -1,13 +1,14 @@
 #pragma once
 #include "cross_platform_vector.h"
+#include "parameters.h"
 
 struct QuantityInfo{
     float air_mass;
     float liquid_mass;
     float solid_mass;
+    float __no_use_padding;
     Vec3F vec;
 };
-constexpr int size_cube = 30;
 
 QuantityInfo * get(QuantityInfo * data,CubeCoord c);
 

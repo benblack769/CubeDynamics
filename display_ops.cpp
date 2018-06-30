@@ -52,7 +52,7 @@ QuantityInfo * create_data(){
     const int data_size = int_pow3(size_cube+2);
     QuantityInfo * info = new QuantityInfo[data_size];
     for(int i = 0; i < data_size; i++){
-        info[i] = QuantityInfo{0,0,0,zero_vec()};
+        info[i] = QuantityInfo{0,0,0,0,zero_vec()};
     }
     visit_all_coords([&](CubeCoord c){
         *get(info,c) = random_init();

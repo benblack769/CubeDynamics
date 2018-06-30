@@ -3,6 +3,7 @@ struct QuantityInfo{
     float air_mass;
     float liquid_mass;
     float solid_mass;
+    float __no_use_padding;
     Vec3F vec;
 };
 #define size_cube 30
@@ -13,8 +14,8 @@ kernel void set_quantities(global struct QuantityInfo * quant_buf){
     uint x = get_global_id(0);
     uint y = get_global_id(1);
     uint z = get_global_id(2);
-	global struct QuantityInfo * cur_info = quant_buf + get_idx(x,y,z);
-    cur_info->air_mass = x/10.0f;
-    cur_info->liquid_mass = y;
-    //cur_info->solid_mass = z*2;
+	global struct QuantityInfo * cur_info = &quant_buf[get_idx(x,y,z)];
+    cur_info->air_mass = sizeof(struct QuantityInfo);//get_idx(x,y,z)/32700.0f; //x/10.0f;
+    cur_info->liquid_mass = 0;//y;
+    cur_info->solid_mass = 0;//z*2;
 }
