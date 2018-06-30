@@ -57,7 +57,7 @@ CubeChangeInfo get_bordering_quantity_vel(QuantityInfo current, QuantityInfo oth
     return CubeChangeInfo{attract_info,final_quantity};
 }
 RGBVal color(QuantityInfo info){
-    return RGBVal{1.0f-std::min(abs(info.air_mass)/2.0f,1.0f),1.0f-std::min(abs(info.solid_mass)/1000.0f,1.0f),1.0f-std::min(abs(info.liquid_mass)/800.0f,1.0f),1.0};
+    return RGBVal{1.0f-std::min(abs(info.air_mass)/2.0f,1.0f),1.0f-std::min(abs(info.solid_mass)/1000.0f,1.0f),1.0f-std::min(abs(info.liquid_mass)/400.0f,1.0f),1.0};
 }
 bool is_transparent(QuantityInfo info){
     return mass(&info) < 0.03;

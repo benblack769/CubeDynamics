@@ -85,13 +85,7 @@ Vec3F reflect_vector_along(Vec3F vector, Vec3F cube_dir){
     Vec3F refl_vec = vector - cube_dir * mag_incident * (2.0f - dampen_value);
     return refl_vec;
 }
-float mass_force_coef(float one_mass){
-    float accel_1 = 1.0f / (0.0001f+one_mass);
-    //Vec3F accel_2 = force_vector / (0.0001f+other_mass);
-    float speed_1 = accel_1 * seconds_per_calc;
-    //Vec3F speed_2 = accel_2 * seconds_per_calc;
-    return speed_1;
-}
+int counter = 0;
 void update(QuantityInfo * source_data, QuantityInfo * update_data){
     Vec3F global_gravity_vector = build_vec(0,-gravity_constant * seconds_per_calc,0);
     visit_all_coords([&](CubeCoord base_coord){
@@ -110,7 +104,7 @@ void update(QuantityInfo * source_data, QuantityInfo * update_data){
             if(is_valid_cube(adj_coord)){
                 CubeChangeInfo adj_change_info = get_bordering_quantity_vel(adj_orig_quanity,base_orig_quanity,-cube_dir);
 
-                total_accel_val += mass_force_coef(mass(&adj_orig_quanity)) *
+                total_accel_val += (seconds_per_calc / (0.0001f+mass(&base_orig_quanity))) *
                         (- change_info.force_shift.force_vec + adj_change_info.force_shift.force_vec);
 
                 add(&total_quanity,&adj_change_info.quantity_shift);
@@ -124,9 +118,13 @@ void update(QuantityInfo * source_data, QuantityInfo * update_data){
 
                 add(&total_quanity,&reflected_vector);
                 subtract(&total_quanity,&add_vec);
+
             }
         });
         total_quanity.vec += total_accel_val + global_gravity_vector;
         *get(update_data,base_coord) = total_quanity;
     });
+    counter++;
+    if(counter % 1000 == 0){
+    }
 }
