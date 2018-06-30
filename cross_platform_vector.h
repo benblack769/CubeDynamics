@@ -9,7 +9,7 @@ struct CubeCoord{
     int z;
 };
 
-inline CubeCoord add(CubeCoord a,CubeCoord b){
+inline CubeCoord add_coord(CubeCoord a,CubeCoord b){
     CubeCoord coord = {a.x + b.x, a.y + b.y, a.z + b.z};
     return coord;
 }

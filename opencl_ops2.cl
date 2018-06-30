@@ -1,9 +1,9 @@
-#define seconds_per_calc 0.001
-#define attraction_force_coef = 10000.0
-#define liquid_pressure_coef = 0.8
-#define solid_pressure_coef = 0.5
-#define gass_pressure_coef = 10.0
-#define gravity_constant = 1000
+#define seconds_per_calc 0.001f
+#define attraction_force_coef 10000.0f
+#define liquid_pressure_coef 0.8f
+#define solid_pressure_coef 0.5f
+#define gass_pressure_coef 10.0f
+#define gravity_constant 1000.0f
 
 struct CubeCoord_{
     int x;
@@ -13,7 +13,7 @@ struct CubeCoord_{
 #define CubeCoord struct CubeCoord_
 #define Vec3F float4
 
-CubeCoord add(CubeCoord a,CubeCoord b){
+CubeCoord add_coord(CubeCoord a,CubeCoord b){
     CubeCoord coord = {a.x + b.x, a.y + b.y, a.z + b.z};
     return coord;
 }
@@ -38,7 +38,9 @@ struct QuantityInfo_{
 #define QuantityInfo struct QuantityInfo_
 #define size_cube 30
 
-QuantityInfo * get(QuantityInfo * data,CubeCoord c);
+global QuantityInfo * get(global QuantityInfo * data,CubeCoord c){
+    return data + (((c.x+1)*(size_cube+1) + (c.y+1))*(size_cube+1) + (c.z+1));
+}
 
 bool is_in_axis_bounds(int val){
     return val >= 0 && val < size_cube;
@@ -55,24 +57,30 @@ float mass(QuantityInfo * info){
 }
 #define visit_all_adjacent_(iter_var,visit_code) \
     {for(int n = -1; n <= 1; n += 2){ \
-        iter_var = CubeCoord{n,0,0}; \
+        CubeCoord _new_iter = {n,0,0}; \
+        iter_var = _new_iter; \
         {visit_code}; \
-        iter_var = CubeCoord{0,n,0}; \
+        CubeCoord _new_iter2 = {0,n,0}; \
+        iter_var = _new_iter2; \
         {visit_code}; \
-        iter_var = CubeCoord{0,0,n}; \
+        CubeCoord _new_iter3 = {0,0,n}; \
+        iter_var = _new_iter3; \
         {visit_code}; \
     }}
 float square(float x){
     return x * x;
 }
-struct VectorAttraction{
+struct VectorAttraction_{
     Vec3F force_vec;
 };
+#define VectorAttraction struct VectorAttraction_
 
-struct CubeChangeInfo{
+struct CubeChangeInfo_{
     VectorAttraction force_shift;
     QuantityInfo quantity_shift;
 };
+#define CubeChangeInfo struct CubeChangeInfo_
+
 
 #define SIDES_ON_CUBE 6
 
@@ -84,7 +92,6 @@ void add(QuantityInfo * dest, QuantityInfo * src){
     dest->air_mass += src->air_mass;
     dest->liquid_mass += src->liquid_mass;
     dest->solid_mass += src->solid_mass;
-    assert(dest->air_mass >= 0);
 }
 void subtract(QuantityInfo * dest, QuantityInfo * src){
     dest->vec = mass(dest) - mass(src) < 1e-10f ?
@@ -94,13 +101,8 @@ void subtract(QuantityInfo * dest, QuantityInfo * src){
     dest->air_mass -= src->air_mass;
     dest->liquid_mass -= src->liquid_mass;
     dest->solid_mass -= src->solid_mass;
-    assert(dest->air_mass >= 0);
 }
 
-QuantityInfo * get(QuantityInfo * data,CubeCoord c){
-    //assert(is_valid_index(c));
-    return data + (((c.x+1)*(size_cube+1) + (c.y+1))*(size_cube+1) + (c.z+1));
-}
 float dot_prod(Vec3F v1,Vec3F v2){
     Vec3F prod = v1 * v2;
     float * arr = (float*)(&prod);
@@ -113,17 +115,17 @@ float dot_prod(Vec3F v1,Vec3F v2){
 Vec3F reflect_vector_along(Vec3F vector, Vec3F cube_dir){
     //reflects the vector in opposite direction of the cube_dir
     float mag_incident = dot_prod(vector,cube_dir);
-    //assert(mag_incident >= 0);
+
     float dampen_value = 0.1f;
     Vec3F refl_vec = vector - cube_dir * mag_incident * (2.0f - dampen_value);
     return refl_vec;
 }
 
 float surface_area(float quantity){
-    return pow(quantity,1.0/3.0);//TODO: check effect of turning this to 2/3, like surface area is supposed to be.
+    return pow(quantity,1.0f/3.0f);//TODO: check effect of turning this to 2/3, like surface area is supposed to be.
 }
 
-struct CubeChangeInfo get_bordering_quantity_vel(QuantityInfo current, QuantityInfo other_cube,Vec3F cube_direction){
+CubeChangeInfo get_bordering_quantity_vel(QuantityInfo current, QuantityInfo other_cube,Vec3F cube_direction){
     /*
     params: cube_direction: the unit vector pointing from this to the "bordering" cube
             bordering: a cube that is adjacent to the current one
@@ -154,13 +156,13 @@ struct CubeChangeInfo get_bordering_quantity_vel(QuantityInfo current, QuantityI
     Vec3F total_liquid_motion = current.vec + cube_direction * liquid_pressure_speed;
     Vec3F total_solid_motion = current.vec + cube_direction * solid_pressure_speed;
 
-    float basic_air_amt = std::max(0.0f,dot_prod(cube_direction,total_air_motion));
-    float basic_liquid_amt = std::max(0.0f,dot_prod(cube_direction,total_liquid_motion));
-    float basic_solid_amt = std::max(0.0f,dot_prod(cube_direction,total_solid_motion));
+    float basic_air_amt = max(0.0f,dot_prod(cube_direction,total_air_motion));
+    float basic_liquid_amt = max(0.0f,dot_prod(cube_direction,total_liquid_motion));
+    float basic_solid_amt = max(0.0f,dot_prod(cube_direction,total_solid_motion));
 
-    float amt_air_given = std::min(basic_air_amt * current.air_mass * seconds_per_calc, current.air_mass/(0.01f+float(SIDES_ON_CUBE)));
-    float amt_liquid_given = std::min(basic_liquid_amt * current.liquid_mass * seconds_per_calc,current.liquid_mass/(0.01f+float(SIDES_ON_CUBE)));
-    float amt_solid_given = std::min(basic_solid_amt * current.solid_mass * seconds_per_calc,current.solid_mass/(0.01f+float(SIDES_ON_CUBE)));
+    float amt_air_given = min(basic_air_amt * current.air_mass * seconds_per_calc, current.air_mass/(0.01f+SIDES_ON_CUBE));
+    float amt_liquid_given = min(basic_liquid_amt * current.liquid_mass * seconds_per_calc,current.liquid_mass/(0.01f+SIDES_ON_CUBE));
+    float amt_solid_given = min(basic_solid_amt * current.solid_mass * seconds_per_calc,current.solid_mass/(0.01f+SIDES_ON_CUBE));
 
     /*
     QuantityInfo air_transfer_quantity = {amt_air_given,0,0, total_air_motion};
@@ -178,8 +180,8 @@ struct CubeChangeInfo get_bordering_quantity_vel(QuantityInfo current, QuantityI
 
     QuantityInfo final_quantity = {amt_air_given,amt_liquid_given,amt_solid_given,final_vec};
 
-    struct VectorAttraction attract_info = {liquid_attraction_vector};
-    struct CubeChangeInfo res_info = {attract_info,final_quantity};
+    VectorAttraction attract_info = {liquid_attraction_vector};
+    CubeChangeInfo res_info = {attract_info,final_quantity};
     return res_info;
 }
 kernel void update_coords(global QuantityInfo * source_data, global QuantityInfo * update_data){
@@ -196,14 +198,14 @@ kernel void update_coords(global QuantityInfo * source_data, global QuantityInfo
     CubeCoord offset;
     visit_all_adjacent_(offset,{
         Vec3F cube_dir = coord_to_vec(offset);
-        CubeCoord adj_coord = add(base_coord,offset);
+        CubeCoord adj_coord = add_coord(base_coord,offset);
         QuantityInfo adj_orig_quanity = *get(source_data,adj_coord);
-        struct CubeChangeInfo change_info = get_bordering_quantity_vel(base_orig_quanity,adj_orig_quanity,cube_dir);
+        CubeChangeInfo change_info = get_bordering_quantity_vel(base_orig_quanity,adj_orig_quanity,cube_dir);
 
         QuantityInfo add_vec = change_info.quantity_shift;
 
         if(is_valid_cube(adj_coord)){
-            struct CubeChangeInfo adj_change_info = get_bordering_quantity_vel(adj_orig_quanity,base_orig_quanity,-cube_dir);
+            CubeChangeInfo adj_change_info = get_bordering_quantity_vel(adj_orig_quanity,base_orig_quanity,-cube_dir);
 
             total_accel_val += (seconds_per_calc / (0.0001f+mass(&base_orig_quanity))) *
                     ( - change_info.force_shift.force_vec + adj_change_info.force_shift.force_vec);
@@ -212,7 +214,6 @@ kernel void update_coords(global QuantityInfo * source_data, global QuantityInfo
             subtract(&total_quanity,&add_vec);
         }
         else{
-            //assert(change_info.force_shift.force_vec == Vec3F(0,0,0));
             //is border cube
             QuantityInfo reflected_vector = add_vec;
             reflected_vector.vec = reflect_vector_along(add_vec.vec,cube_dir);

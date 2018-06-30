@@ -13,10 +13,10 @@ inline int int_pow3(int x){
 }
 void cell_update_main_loop(){
     int all_cube_size = int_pow3(size_cube+2);
-    OpenCLExecutor executor("update_cube.cl");
+    OpenCLExecutor executor("opencl_ops2.cl");
     CLBuffer<QuantityInfo> all_cubes_buf = executor.new_clbuffer<QuantityInfo>(all_cube_size);
     CLBuffer<QuantityInfo> update_buf = executor.new_clbuffer<QuantityInfo>(all_cube_size);
-    CLKernel update_kern = executor.new_clkernel("set_quantities",cl::NDRange(size_cube,size_cube,size_cube),{all_cubes_buf.k_arg(),update_buf.k_arg()});
+    CLKernel update_kern = executor.new_clkernel("update_coords",CL_NDRange(size_cube,size_cube,size_cube),{all_cubes_buf.k_arg(),update_buf.k_arg()});
 
     FrameRateControl cell_automata_update_count(1000.0);
     FrameRateControl update_speed_output_count(1.0);
