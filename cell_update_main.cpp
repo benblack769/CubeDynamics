@@ -1,9 +1,24 @@
-#include "cube_data.h"
 #include "cell_update_main.h"
-#include "cross_platform_vector.h"
+#include "update.h"
+#include "display_ops.h"
 
 RenderBufferData all_buffer_data;
 
+template<class visit_fn_ty>
+void visit_all_coords(visit_fn_ty visit_fn){
+    for(int i = 0; i < size_cube; i++){
+        for(int j = 0; j < size_cube; j++){
+            for(int k = 0; k < size_cube; k++){
+                visit_fn(CubeCoord{i,j,k});
+            }
+        }
+    }
+}
+void update(QuantityInfo * source_data, QuantityInfo * update_data){
+    visit_all_coords([&](CubeCoord base_coord){
+        update_coords(source_data,update_data,base_coord.x,base_coord.y,base_coord.z);
+    });
+}
 void cell_update_main_loop(){
     FrameRateControl cell_automata_update_count(1000.0);
     FrameRateControl update_speed_output_count(1.0);

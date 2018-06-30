@@ -1,11 +1,11 @@
 #pragma once
+#include "quantity_info.h"
 #include "cube_color.h"
 #include "cube_coords.h"
-#include "cube_info.h"
-#include <cstdlib>
-#include <vector>
 
-const int size_cube = 30;
+QuantityInfo random_init();
+RGBVal color(QuantityInfo info);
+bool is_transparent(QuantityInfo info);
 
 std::vector<FaceDrawInfo> get_exposed_faces(QuantityInfo * all_data);
 void update(QuantityInfo *source_data, QuantityInfo * update_data);

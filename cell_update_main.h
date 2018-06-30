@@ -3,8 +3,8 @@
 #include <thread>
 #include <mutex>
 #include <vector>
+#include "cube_coords.h"
 using namespace std;
-#define BYTE unsigned char
 
 void cell_update_main_loop();
 
