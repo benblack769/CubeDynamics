@@ -1,5 +1,6 @@
 #include "display_ops.h"
 
+
 inline int int_pow3(int x){
     return x * x * x;
 }
@@ -31,9 +32,28 @@ void visit_all_faces(CubeCoord cube,visit_fn_ty visit_fn){
         visit_fn(FaceInfo{cube,true,axis});
     }
 }
+
+RGBVal color(QuantityInfo info){
+    return RGBVal{1.0f-std::min(abs(info.air_mass)/2.0f,1.0f),1.0f-std::min(abs(info.solid_mass)/1000.0f,1.0f),1.0f-std::min(abs(info.liquid_mass)/400.0f,1.0f),1.0};
+}
+bool is_transparent(QuantityInfo info){
+    return mass(&info) < 0.03;
+}
+
+QuantityInfo random_init(){
+    QuantityInfo data;
+    data.air_mass = 1*rand() / float(RAND_MAX);
+    data.liquid_mass = 0*rand() / float(RAND_MAX);
+    data.solid_mass = 0*rand() / float(RAND_MAX);
+    data.vec = zero_vec();
+    return data;
+}
 QuantityInfo * create_data(){
     const int data_size = int_pow3(size_cube+2);
-    QuantityInfo * info = new QuantityInfo[data_size]();
+    QuantityInfo * info = new QuantityInfo[data_size];
+    for(int i = 0; i < data_size; i++){
+        info[i] = QuantityInfo{0,0,0,zero_vec()};
+    }
     visit_all_coords([&](CubeCoord c){
         *get(info,c) = random_init();
     });

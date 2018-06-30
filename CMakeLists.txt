@@ -14,18 +14,26 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include_directories(external/glew-1.13.0/include)
 include_directories(external/glfw-3.1.2/include)
 include_directories(external/glm-0.9.7.1)
+include_directories(external/opencl-2.2)
 
 
-add_executable(draw_squares
-    main.cpp
-    cube_coords.cpp
-    display_ops.cpp
-    update.cpp
-    cell_update_main.cpp
+add_executable(cl_prac
+    opencl_cell_update_main.cpp
 )
-target_link_libraries(draw_squares PRIVATE
-    glfw3
-    glew
-    opengl
-    gdi
+target_link_libraries(cl_prac PRIVATE
+    "C:/Windows/System32/OpenCL.dll"
 )
+
+#add_executable(draw_squares
+ #   main.cpp
+ #   cube_coords.cpp
+#    display_ops.cpp
+#    update.cpp
+#    cell_update_main.cpp
+#)
+#target_link_libraries(draw_squares PRIVATE
+#    glfw3
+#    glew
+#    opengl
+#   gdi
+#)

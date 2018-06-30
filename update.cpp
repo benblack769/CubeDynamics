@@ -10,24 +10,42 @@
         iter_var = CubeCoord{0,0,n}; \
         {visit_code}; \
     }}
-
-float max(float x,float y){
-    return x < y ? x : y;
+inline float square(float x){
+    return x * x;
 }
+struct VectorAttraction{
+    Vec3F force_vec;
+};
+
+void add(QuantityInfo * dest, QuantityInfo * src);
+void subtract(QuantityInfo * dest, QuantityInfo * src);
+
+struct CubeChangeInfo{
+    VectorAttraction force_shift;
+    QuantityInfo quantity_shift;
+};
+
+constexpr int SIDES_ON_CUBE = 6;
 
 void add(QuantityInfo * dest, QuantityInfo * src){
-    dest->vec = (dest->vec * mass(dest) + src->vec * mass(src)) / (0.000001f + mass(dest) + mass(src));
+    dest->vec = mass(dest) + mass(src) < 1e-10f ?
+                zero_vec() :
+            (dest->vec * mass(dest) + src->vec * mass(src)) / (mass(dest) + mass(src));
 
     dest->air_mass += src->air_mass;
     dest->liquid_mass += src->liquid_mass;
     dest->solid_mass += src->solid_mass;
+    assert(dest->air_mass >= 0);
 }
 void subtract(QuantityInfo * dest, QuantityInfo * src){
-    dest->vec = (dest->vec * mass(dest) - src->vec * mass(src)) / (0.000001f + mass(dest) - mass(src));
+    dest->vec = mass(dest) - mass(src) < 1e-10f ?
+                zero_vec() :
+            (dest->vec * mass(dest) - src->vec * mass(src)) / (mass(dest) - mass(src));
 
     dest->air_mass -= src->air_mass;
     dest->liquid_mass -= src->liquid_mass;
     dest->solid_mass -= src->solid_mass;
+    assert(dest->air_mass >= 0);
 }
 
 QuantityInfo * get(QuantityInfo * data,CubeCoord c){
@@ -78,20 +96,30 @@ CubeChangeInfo get_bordering_quantity_vel(QuantityInfo current, QuantityInfo oth
     Vec3F total_liquid_motion = current.vec + cube_direction * liquid_pressure_speed;
     Vec3F total_solid_motion = current.vec + cube_direction * solid_pressure_speed;
 
-    float basic_air_amt = max(0.0f,glm::dot(cube_direction,total_air_motion));
-    float basic_liquid_amt = max(0.0f,glm::dot(cube_direction,total_liquid_motion));
-    float basic_solid_amt = max(0.0f,glm::dot(cube_direction,total_solid_motion));
+    float basic_air_amt = std::max(0.0f,glm::dot(cube_direction,total_air_motion));
+    float basic_liquid_amt = std::max(0.0f,glm::dot(cube_direction,total_liquid_motion));
+    float basic_solid_amt = std::max(0.0f,glm::dot(cube_direction,total_solid_motion));
 
     float amt_air_given = std::min(basic_air_amt * current.air_mass * seconds_per_calc, current.air_mass/(0.01f+float(SIDES_ON_CUBE)));
     float amt_liquid_given = std::min(basic_liquid_amt * current.liquid_mass * seconds_per_calc,current.liquid_mass/(0.01f+float(SIDES_ON_CUBE)));
     float amt_solid_given = std::min(basic_solid_amt * current.solid_mass * seconds_per_calc,current.solid_mass/(0.01f+float(SIDES_ON_CUBE)));
 
+    /*
+    QuantityInfo air_transfer_quantity = {amt_air_given,0,0, total_air_motion};
+    QuantityInfo liquid_transfer_quantity = {0,amt_liquid_given,0, total_liquid_motion};
+    QuantityInfo solid_transfer_quantity = {0,0,amt_solid_given, total_solid_motion};
+
+    QuantityInfo final_quantity = air_transfer_quantity;
+    add(&final_quantity,&liquid_transfer_quantity);
+    add(&final_quantity,&solid_transfer_quantity);
+    */
     Vec3F final_vec = (total_air_motion * amt_air_given +
                        total_liquid_motion * amt_liquid_given +
                        total_solid_motion * amt_solid_given) /
                            (amt_air_given + amt_liquid_given + amt_solid_given + 0.000001f);
 
     QuantityInfo final_quantity = {amt_air_given,amt_liquid_given,amt_solid_given,final_vec};
+
     VectorAttraction attract_info{liquid_attraction_vector};
     return CubeChangeInfo{attract_info,final_quantity};
 }
@@ -129,7 +157,6 @@ void update_coords(QuantityInfo * source_data, QuantityInfo * update_data, int b
 
             add(&total_quanity,&reflected_vector);
             subtract(&total_quanity,&add_vec);
-
         }
     });
     total_quanity.vec += total_accel_val + global_gravity_vector;

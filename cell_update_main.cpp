@@ -19,6 +19,7 @@ void update(QuantityInfo * source_data, QuantityInfo * update_data){
         update_coords(source_data,update_data,base_coord.x,base_coord.y,base_coord.z);
     });
 }
+
 void cell_update_main_loop(){
     FrameRateControl cell_automata_update_count(1000.0);
     FrameRateControl update_speed_output_count(1.0);

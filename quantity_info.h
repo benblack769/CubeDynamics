@@ -20,3 +20,7 @@ inline bool is_valid_cube(CubeCoord c){
         is_in_axis_bounds(c.y) &&
         is_in_axis_bounds(c.z);
 }
+
+inline float mass(QuantityInfo * info){
+    return info->air_mass + info->liquid_mass + info->solid_mass;
+}
