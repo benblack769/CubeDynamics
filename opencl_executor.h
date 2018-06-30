@@ -1,8 +1,64 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <vector>
+#include <cassert>
+
 #include <cl.hpp>
 
+class OpenCLExecutor;
+class CLKernel{
+protected:
+    cl::CommandQueue myqueue;
+    cl::Program prog;
+    cl::Kernel kern;
+    cl::NDRange run_range;
+public:
+    friend class OpenCLExecutor;
+    CLKernel(cl::Program in_prog,cl::CommandQueue in_queue,const char * kern_name,cl::NDRange in_run_range,std::vector<cl::Buffer> args):
+        myqueue(in_queue),
+        prog(in_prog),
+        kern(in_prog,kern_name),
+        run_range(in_run_range)
+    {
+        int idx = 0;
+        for(cl::Buffer buf : args){
+            this->kern.setArg(idx,buf);
+            idx++;
+        }
+    }
+    void run(){
+        myqueue.enqueueNDRangeKernel(kern,cl::NullRange,run_range,cl::NullRange);
+    }
+};
+
+template<typename item_ty>
+class CLBuffer{
+protected:
+    int bufsize;
+    cl::Buffer buf;
+    cl::Context mycontext;
+    cl::CommandQueue myqueue;
+public:
+    CLBuffer(cl::Context context,cl::CommandQueue queue,size_t size):
+        buf(context,CL_MEM_READ_WRITE,sizeof(item_ty)*size),
+        bufsize(size),
+        mycontext(context),
+        myqueue(queue){}
+
+    void write_buffer(std::vector<item_ty>& data){
+        assert(data.size() == bufsize);
+        myqueue.enqueueWriteBuffer(buf,CL_TRUE,0,data.size()*sizeof(item_ty),data.data());
+    }
+    std::vector<item_ty> read_buffer(){
+        std::vector<item_ty> res(bufsize);
+        myqueue.enqueueReadBuffer(buf,CL_TRUE,0,res.size()*sizeof(item_ty),res.data());
+        return res;
+    }
+    cl::Buffer & k_arg(){
+        return buf;
+    }
+};
 class OpenCLExecutor{
 protected:
     std::string source_path;
@@ -19,6 +75,14 @@ public:
         source_path = in_source_path;
         build_program();
     }
+    template<typename item_ty>
+    CLBuffer<item_ty> new_clbuffer(size_t size){
+        return CLBuffer<item_ty>(context,queue,size);
+    }
+    CLKernel new_clkernel(const char * kern_name,cl::NDRange run_range,std::vector<cl::Buffer> buflist){
+        return CLKernel(program,queue,kern_name,run_range,buflist);
+    }
+
 protected:
     void get_main_device(){
         std::vector<cl::Platform> all_platforms;
