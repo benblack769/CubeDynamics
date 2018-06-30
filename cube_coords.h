@@ -3,9 +3,8 @@
 #include <vector>
 #include <cassert>
 #include <iostream>
-#include <glm/common.hpp>
+#include "cross_platform_vector.h"
 
-using CubeCoord = glm::ivec3;
 inline std::ostream & operator << (std::ostream & os, CubeCoord v){
     return os << v.x << "  " << v.y << "  " << v.z;
 }

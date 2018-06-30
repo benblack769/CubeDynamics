@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-include(ExternalProject)
+#include(ExternalProject)
 
 #ExternalProject_Add(glew_lib PREFIX ${CMAKE_SOURCE_DIR} GIT_REPOSITORY "https://github.com/glfw/glfw")
 
@@ -16,14 +16,22 @@ include_directories(external/glfw-3.1.2/include)
 include_directories(external/glm-0.9.7.1)
 
 
-add_executable(squares
+add_executable(run_update
+    cube_coords.cpp
+    cube_info.cpp
+    cube_data.cpp
+    cell_update_main.cpp
+)
+target_compile_definitions(run_update PRIVATE RUN_NO_GRAPHICS)
+
+add_executable(draw_squares
     main.cpp
     cube_coords.cpp
     cube_info.cpp
     cube_data.cpp
     cell_update_main.cpp
 )
-target_link_libraries(squares
+target_link_libraries(draw_squares PRIVATE
     glfw3
     glew
     opengl

@@ -5,9 +5,6 @@
 #include "glm/gtx/norm.hpp"
 using namespace std;
 
-Vec3F coord_to_vec(CubeCoord c){
-    return Vec3F(c.x,c.y,c.z);
-}
 template<class visit_fn_ty>
 void visit_all_coords(visit_fn_ty visit_fn){
     for(int i = 0; i < size_cube; i++){
@@ -19,40 +16,11 @@ void visit_all_coords(visit_fn_ty visit_fn){
     }
 }
 template<class visit_fn_ty>
-void visit_all_coords_between(CubeCoord lower,CubeCoord upper,visit_fn_ty visit_fn){
-    assert(
-                lower.x < upper.x &&
-                lower.y < upper.y &&
-                lower.z < upper.z
-        );
-    for(int i = lower.x; i < upper.x; i++){
-        for(int j = lower.y; j < upper.y; j++){
-            for(int k = lower.z; k < upper.z; k++){
-                visit_fn(CubeCoord{i,j,k});
-            }
-        }
-    }
-}
-template<class visit_fn_ty>
-void visit_all_coords_1_around(CubeCoord center,visit_fn_ty visit_fn){
-    for(int i = center.x-1; i <= center.x+1; i++){
-        for(int j = center.y-1; j <= center.y+1; j++){
-            for(int k = center.z-1; k <= center.z+1; k++){
-                if(i != 0 || j != 0 || k != 0){
-                    visit_fn(CubeCoord{i,j,k});
-                }
-            }
-        }
-    }
-}
-
-template<class visit_fn_ty>
-void visit_all_adjacent(CubeCoord cube,visit_fn_ty visit_fn){
-    int i = cube.x, j = cube.y, k = cube.z;
+void visit_all_adjacent(visit_fn_ty visit_fn){
     for(int n = -1; n <= 1; n += 2){
-        visit_fn(CubeCoord{i+n,j,k},Vec3F(n,0,0));
-        visit_fn(CubeCoord{i,j+n,k},Vec3F(0,n,0));
-        visit_fn(CubeCoord{i,j,k+n},Vec3F(0,0,n));
+        visit_fn(CubeCoord{n,0,0});
+        visit_fn(CubeCoord{0,n,0});
+        visit_fn(CubeCoord{0,0,n});
     }
 }
 template<class visit_fn_ty>
@@ -65,32 +33,44 @@ void visit_all_faces(CubeCoord cube,visit_fn_ty visit_fn){
 bool is_in_axis_bounds(int val){
     return val >= 0 && val < size_cube;
 }
+bool is_in_index_bounds(int val){
+    return val >= -1 && val <= size_cube;
+}
 bool is_valid_cube(CubeCoord c){
     return
         is_in_axis_bounds(c.x) &&
         is_in_axis_bounds(c.y) &&
         is_in_axis_bounds(c.z);
 }
+bool is_valid_index(CubeCoord c){
+    return
+        is_in_index_bounds(c.x) &&
+        is_in_index_bounds(c.y) &&
+        is_in_index_bounds(c.z);
+}
+
 int int_pow3(int x){
     return x * x * x;
 }
-CubeData::CubeData():
-    data(int_pow3(size_cube)){
+QuantityInfo * get(QuantityInfo * data,CubeCoord c){
+    assert(is_valid_index(c));
+    return data + (((c.x+1)*(size_cube+1) + (c.y+1))*(size_cube+1) + (c.z+1));
 }
-
-CubeInfo & CubeData::get(CubeCoord c){
-    static CubeInfo border(true);
-    return is_valid_cube(c) ?
-                data.at(c.x*size_cube*size_cube + c.y*size_cube + c.z):
-                border;
+QuantityInfo * create_data(){
+    const int data_size = int_pow3(size_cube+2);
+    QuantityInfo * info = new QuantityInfo[data_size]();
+    visit_all_coords([&](CubeCoord c){
+        *get(info,c) = random_init();
+    });
+    return info;
 }
-std::vector<FaceDrawInfo> CubeData::get_exposed_faces(){
+std::vector<FaceDrawInfo> get_exposed_faces(QuantityInfo * all_data){
     std::vector<FaceDrawInfo> info;
     visit_all_coords([&](CubeCoord coord){
-        if(!this->get(coord).is_transparent()){
+        if(!is_transparent(*get(all_data,coord))){
             visit_all_faces(coord,[&](FaceInfo face){
-                if(!is_valid_cube(face.cube_facing()) || this->get(face.cube_facing()).is_transparent()){
-                    info.push_back(FaceDrawInfo{this->get(coord).color(),face});
+                if(!is_valid_cube(face.cube_facing()) || is_transparent(*get(all_data,face.cube_facing()))){
+                    info.push_back(FaceDrawInfo{color(*get(all_data,coord)),face});
                 }
             });
         }
@@ -112,30 +92,29 @@ float mass_force_coef(float one_mass){
     //Vec3F speed_2 = accel_2 * seconds_per_calc;
     return speed_1;
 }
-float energy_to_accel(float energy_val, float mass){
-    return sqrt(2.0f * energy_val / mass);
-}
-void CubeData::update(CubeData & update_data){
-    Vec3F global_gravity_vector = Vec3F(0,-gravity_constant * seconds_per_calc,0);
+void update(QuantityInfo * source_data, QuantityInfo * update_data){
+    Vec3F global_gravity_vector = build_vec(0,-gravity_constant * seconds_per_calc,0);
     visit_all_coords([&](CubeCoord base_coord){
-        QuantityInfo total_quanity = this->get(base_coord).data;
+        QuantityInfo base_orig_quanity = *get(source_data,base_coord);
+        QuantityInfo total_quanity = base_orig_quanity;
 
-        Vec3F total_accel_val = Vec3F(0,0,0);
-        visit_all_adjacent(base_coord,[&](CubeCoord adj_coord, Vec3F cube_dir){
-            CubeChangeInfo change_info = this->get(base_coord).get_bordering_quantity_vel(this->get(adj_coord),cube_dir);
+        Vec3F total_accel_val = zero_vec();
+        visit_all_adjacent([&](CubeCoord offset){
+            Vec3F cube_dir = coord_to_vec(offset);
+            CubeCoord adj_coord = add(base_coord,offset);
+            QuantityInfo adj_orig_quanity = *get(source_data,adj_coord);
+            CubeChangeInfo change_info = get_bordering_quantity_vel(base_orig_quanity,adj_orig_quanity,cube_dir);
 
             QuantityInfo add_vec = change_info.quantity_shift;
 
-            QuantityInfo shift_across_border = {1,0,0,Vec3F(0,0,0)};
-
             if(is_valid_cube(adj_coord)){
-                CubeChangeInfo adj_change_info = this->get(adj_coord).get_bordering_quantity_vel(this->get(base_coord),-cube_dir);
+                CubeChangeInfo adj_change_info = get_bordering_quantity_vel(adj_orig_quanity,base_orig_quanity,-cube_dir);
 
-                total_accel_val += mass_force_coef(this->get(base_coord).data.mass()) *
+                total_accel_val += mass_force_coef(mass(&adj_orig_quanity)) *
                         (- change_info.force_shift.force_vec + adj_change_info.force_shift.force_vec);
 
-                total_quanity.add(adj_change_info.quantity_shift);
-                total_quanity.subtract(add_vec);
+                add(&total_quanity,&adj_change_info.quantity_shift);
+                subtract(&total_quanity,&add_vec);
             }
             else{
                 //assert(change_info.force_shift.force_vec == Vec3F(0,0,0));
@@ -143,11 +122,11 @@ void CubeData::update(CubeData & update_data){
                 QuantityInfo reflected_vector = add_vec;
                 reflected_vector.vec = reflect_vector_along(add_vec.vec,cube_dir);
 
-                total_quanity.add(reflected_vector);
-                total_quanity.subtract(add_vec);
+                add(&total_quanity,&reflected_vector);
+                subtract(&total_quanity,&add_vec);
             }
         });
         total_quanity.vec += total_accel_val + global_gravity_vector;
-        update_data.get(base_coord).data = total_quanity;
+        *get(update_data,base_coord) = total_quanity;
     });
 }

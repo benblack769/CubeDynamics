@@ -5,14 +5,8 @@
 #include <cstdlib>
 #include <vector>
 
-constexpr int size_cube = 30;
-class CubeData{
-    std::vector<CubeInfo> data;
-    std::vector<float> bond_data;
-public:
-    CubeData();
-    CubeInfo & get(CubeCoord c);
-    float & get_bond(CubeCoord coord, CubeCoord dir);
-    std::vector<FaceDrawInfo> get_exposed_faces();
-    void update(CubeData & update_data);
-};
+const int size_cube = 30;
+
+std::vector<FaceDrawInfo> get_exposed_faces(QuantityInfo * all_data);
+void update(QuantityInfo *source_data, QuantityInfo * update_data);
+QuantityInfo * create_data();
