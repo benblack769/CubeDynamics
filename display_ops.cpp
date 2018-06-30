@@ -53,7 +53,7 @@ int data_size(){
 }
 void init_data(QuantityInfo * data){
     for(int i = 0; i < data_size(); i++){
-        data[i] = QuantityInfo{0,0,0,zero_vec()};
+        data[i] = QuantityInfo{0,0,0,0,zero_vec()};
     }
     visit_all_coords([&](CubeCoord c){
         *get(data,c) = random_init();

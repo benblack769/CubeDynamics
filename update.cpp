@@ -125,7 +125,7 @@ CubeChangeInfo get_bordering_quantity_vel(QuantityInfo current, QuantityInfo oth
                        total_solid_motion * amt_solid_given) /
                            (amt_air_given + amt_liquid_given + amt_solid_given + 0.000001f);
 
-    QuantityInfo final_quantity = {amt_air_given,amt_liquid_given,amt_solid_given,final_vec};
+    QuantityInfo final_quantity = {amt_air_given,amt_liquid_given,amt_solid_given,0,final_vec};
 
     VectorAttraction attract_info{liquid_attraction_vector};
     return CubeChangeInfo{attract_info,final_quantity};

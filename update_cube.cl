@@ -3,6 +3,7 @@ struct QuantityInfo{
     float air_mass;
     float liquid_mass;
     float solid_mass;
+    float __no_use_padding;
     Vec3F vec;
 };
 #define size_cube 30

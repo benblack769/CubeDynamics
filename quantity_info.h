@@ -5,9 +5,10 @@ struct QuantityInfo{
     float air_mass;
     float liquid_mass;
     float solid_mass;
+    float __no_use_padding;
     Vec3F vec;
 };
-constexpr int size_cube = 30;
+constexpr int size_cube = 50;
 
 QuantityInfo * get(QuantityInfo * data,CubeCoord c);
 

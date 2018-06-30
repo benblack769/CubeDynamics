@@ -20,7 +20,7 @@ void cell_update_main_loop(){
 
     FrameRateControl cell_automata_update_count(1000.0);
     FrameRateControl update_speed_output_count(1.0);
-    FrameRateControl cube_update_count(10.0);
+    FrameRateControl cube_update_count(1.0);
 
     vector<QuantityInfo> cpu_buf = create_data_vec();
     all_cubes_buf.write_buffer(cpu_buf);

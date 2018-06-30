@@ -1,5 +1,5 @@
-#define seconds_per_calc 0.001f
-#define attraction_force_coef 10000.0f
+#define seconds_per_calc 0.0001f
+#define attraction_force_coef 50000.0f
 #define liquid_pressure_coef 0.8f
 #define solid_pressure_coef 0.5f
 #define gass_pressure_coef 10.0f
@@ -33,10 +33,11 @@ struct QuantityInfo_{
     float air_mass;
     float liquid_mass;
     float solid_mass;
+    float __no_use_padding;
     Vec3F vec;
 };
 #define QuantityInfo struct QuantityInfo_
-#define size_cube 30
+#define size_cube 50
 
 global QuantityInfo * get(global QuantityInfo * data,CubeCoord c){
     return data + (((c.x+1)*(size_cube+1) + (c.y+1))*(size_cube+1) + (c.z+1));
@@ -178,7 +179,7 @@ CubeChangeInfo get_bordering_quantity_vel(QuantityInfo current, QuantityInfo oth
                        total_solid_motion * amt_solid_given) /
                            (amt_air_given + amt_liquid_given + amt_solid_given + 0.000001f);
 
-    QuantityInfo final_quantity = {amt_air_given,amt_liquid_given,amt_solid_given,final_vec};
+    QuantityInfo final_quantity = {amt_air_given,amt_liquid_given,amt_solid_given,0,final_vec};
 
     VectorAttraction attract_info = {liquid_attraction_vector};
     CubeChangeInfo res_info = {attract_info,final_quantity};
