@@ -23,7 +23,7 @@ public:
         this->rendered();
     }
     void spin_sleep(){
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     void rendered(){
         prev_time = chrono::system_clock::now();

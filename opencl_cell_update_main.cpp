@@ -3,7 +3,7 @@
 #include <iostream>
 #include <mutex>
 #include <thread>
-using namespace  std;
+
 #include "cell_update_main.h"
 #include "update.h"
 #include "display_ops.h"
@@ -54,7 +54,7 @@ void cell_triagulize_main_loop(){
             all_buffer_data.set_vals(cube_colors,cube_verticies);
         }
         if(!cube_update_count.should_render()){
-            //cube_update_count.render_pause();
+            cube_update_count.spin_sleep();
         }
     }
 }
@@ -74,7 +74,7 @@ void cell_update_main_loop(){
 
     FrameRateControl cell_automata_update_count(1000.0);
     FrameRateControl update_speed_output_count(1.0);
-    FrameRateControl cube_update_count(10.0);
+    FrameRateControl cube_update_count(20.0);
 
     all_cubes_buf.write_buffer(cpu_buf);
     update_buf.write_buffer(cpu_buf);
@@ -94,7 +94,7 @@ void cell_update_main_loop(){
             cout << "frames per second = " << num_cube_updates / duration_since_render << endl;
             num_cube_updates = 0;
         }
-        if(true || cell_automata_update_count.should_render()){
+        if(cell_automata_update_count.should_render()){
             cell_automata_update_count.rendered();
             update_kern.run();
             all_cubes_buf.copy_buffer(update_buf);
@@ -103,7 +103,7 @@ void cell_update_main_loop(){
         if(!cube_update_count.should_render() &&
                 !cell_automata_update_count.should_render() &&
                 !update_speed_output_count.should_render()){
-            //cell_automata_update_count.render_pause();
+            cell_automata_update_count.spin_sleep();
         }
     }
 }
