@@ -99,16 +99,15 @@ public:
                              0,nullptr,
                              nullptr));
     }
-    std::vector<item_ty> read_buffer(){
-        std::vector<item_ty> res(bufsize);
+    void read_buffer(std::vector<item_ty> & read_into){
+        assert(read_into.size() == bufsize);
         CheckError(clEnqueueReadBuffer(myqueue,
                              buf,
                              CL_TRUE,
                              0,bufsize*sizeof(item_ty),
-                             res.data(),
+                             read_into.data(),
                              0,nullptr,
                              nullptr));
-        return res;
     }
     cl_mem k_arg(){
         return buf;
