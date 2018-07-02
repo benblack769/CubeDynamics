@@ -289,7 +289,7 @@ int main( void )
     glGenBuffers(1, &colorbuffer);
 
     FrameRateControl basic_frame_count(30.0);
-    FrameRateControl cube_update_count(20.0);
+    FrameRateControl cube_update_count(40.0);
     int current_cube_verticy_count = 0;
     do{
         //sleeps when frame was recently rendered to prevent spinning
@@ -298,15 +298,15 @@ int main( void )
         if(cube_update_count.should_render()){
             cube_update_count.rendered();
 
-            all_buffer_data.update_check();
+            if(all_buffer_data.update_check()){
+                current_cube_verticy_count = all_buffer_data.get_verticies().size();
 
-            current_cube_verticy_count = all_buffer_data.get_verticies().size();
+                glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(float)*all_buffer_data.get_verticies().size(), all_buffer_data.get_verticies().data(), GL_DYNAMIC_DRAW);
 
-            glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(float)*all_buffer_data.get_verticies().size(), all_buffer_data.get_verticies().data(), GL_DYNAMIC_DRAW);
-
-            glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(BYTE)*all_buffer_data.get_colors().size(), all_buffer_data.get_colors().data(), GL_DYNAMIC_DRAW);
+                glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(BYTE)*all_buffer_data.get_colors().size(), all_buffer_data.get_colors().data(), GL_DYNAMIC_DRAW);
+            }
         }
         if(basic_frame_count.should_render()){
             basic_frame_count.rendered();

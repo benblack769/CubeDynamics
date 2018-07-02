@@ -19,10 +19,10 @@ CubeInfo::CubeInfo(bool in_is_border){
     data.vec = glm::vec3(0,0,0);
 }
 float surface_area(float quantity){
-    return pow(quantity,1.0/3.0);//TODO: check effect of turning this to 2/3, like surface area is supposed to be.
+    return powf(quantity,1.0f/3.0f);//TODO: check effect of turning this to 2/3, like surface area is supposed to be.
 }
 
-CubeChangeInfo CubeInfo::get_bordering_quantity_vel(const CubeInfo & other_cube,glm::vec3 cube_direction)const{
+CubeChangeInfo CubeInfo::get_bordering_quantity_vel(const CubeInfo & other_cube,glm::vec3 cube_direction,float solid_interal_bond)const{
     /*
     params: cube_direction: the unit vector pointing from this to the "bordering" cube
             bordering: a cube that is adjacent to the current one
@@ -43,9 +43,11 @@ CubeChangeInfo CubeInfo::get_bordering_quantity_vel(const CubeInfo & other_cube,
     float liquid_attraction_force = attraction_force_coef * surface_area(this->data.liquid_mass) * surface_area(other_cube.data.liquid_mass);
     glm::vec3 liquid_attraction_vector = -liquid_attraction_force * cube_direction;
 
+    //float solid_interal_attraction = 500*powf(this->data.solid_mass,2.0f/3.0f) * solid_interal_bond;
+
     float air_pressure = gass_pressure_coef*data.air_mass;
     float liquid_pressure = liquid_pressure_coef*data.liquid_mass;
-    float solid_pressure = solid_pressure_coef*pow(data.solid_mass,3.0f/2.0f);
+    float solid_pressure = solid_pressure_coef*data.solid_mass;
     float total_pressure = air_pressure + liquid_pressure + solid_pressure;
 
     float air_pressure_speed = total_pressure * gass_pressure_coef;
@@ -79,5 +81,5 @@ RGBVal CubeInfo::color(){
     return RGBVal{1.0f-std::min(abs(data.air_mass)/2.0f,1.0f),1.0f-std::min(abs(data.solid_mass)/1000.0f,1.0f),1.0f-std::min(abs(data.liquid_mass)/800.0f,1.0f),1.0};//,std::min(abs(data.air_mass)/2.0f,1.0f)};
 }
 bool CubeInfo::is_transparent(){
-    return data.mass() < 0.3;
+    return data.mass() < 3;
 }

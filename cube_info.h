@@ -60,7 +60,7 @@ public:
     bool is_border;
 public:
     CubeInfo(bool in_is_border=false);
-    CubeChangeInfo get_bordering_quantity_vel(const CubeInfo & other_cube,Vec3F cube_direction)const;
+    CubeChangeInfo get_bordering_quantity_vel(const CubeInfo & other_cube,Vec3F cube_direction,float solid_interal_bond)const;
     RGBVal color();
     bool is_transparent();
     void debug_print(){
