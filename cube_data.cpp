@@ -99,14 +99,14 @@ CubeData::CubeData():
     for(auto & a : data){
         a.data.solid_mass = 0.001;
     }
-    float solid_mass_start_val = 100;
+    float solid_mass_start_val = 50;
     visit_all_coords_between(CubeCoord{2,2,2},CubeCoord{6,6,6},[&](CubeCoord coord){
         this->get(coord).data.solid_mass = solid_mass_start_val;
     });
     visit_all_coords_between(CubeCoord{4,12,4},CubeCoord{8,18,8},[&](CubeCoord coord){
         this->get(coord).data.solid_mass = solid_mass_start_val;
     });
-    visit_all_coords_between(CubeCoord{15,1,15},CubeCoord{19,5,19},[&](CubeCoord coord){
+    visit_all_coords_between(CubeCoord{15,6,15},CubeCoord{19,14,19},[&](CubeCoord coord){
         this->get(coord).data.solid_mass = solid_mass_start_val;
     });
     visit_all_coords([&](CubeCoord coord){
@@ -194,6 +194,9 @@ void normalize_exchange(float * exch){
         exch[i] *= inv_val;
     }
 }
+float mass_conv(float m){
+    return pow(m,2.0f/3.0f);
+}
 int counter = 0;
 void CubeData::update(CubeData & update_data){
     Vec3F global_gravity_vector = Vec3F(0,-gravity_constant * seconds_per_calc,0);
@@ -257,7 +260,12 @@ void CubeData::update(CubeData & update_data){
         });
 
         base_exchange_data[STATIC_EXCH_IDX] = amount_mass_untranfered;
-        assert(base_exchange_data[STATIC_EXCH_IDX] >= 0);
+        if(base_exchange_data[STATIC_EXCH_IDX] < -0.001){
+            using namespace std;
+            cout << "arg static index\n";
+            cout << base_exchange_data[STATIC_EXCH_IDX] << endl;
+        }
+        //assert(base_exchange_data[STATIC_EXCH_IDX] >= -0.001);
         //normalize_exchange(base_exchange_data);
         //base_exchange_data[STATIC_EXCH_IDX] = max(base_exchange_data[STATIC_EXCH_IDX], 0.0f);
 
@@ -279,29 +287,32 @@ void CubeData::update(CubeData & update_data){
             visit_all_adjacent_plus_center([&](int old_base_idx, CubeCoord old_base_offset){
                 CubeCoord old_base = base_coord + old_base_offset;
                 float amnt_leaving_old_base = base_exchange_data[old_base_idx];
+                float amt_old_base = this->get(old_base).data.solid_mass;
                 //float prop_leaving_old_base = amnt_leaving_old_base / max(0.00001f,this->get(old_base).data.solid_mass);
                 visit_all_adjacent_plus_center([&](int old_adj_idx, CubeCoord old_adj_offset){
                     CubeCoord old_adj = bond_eval_coord + old_adj_offset;
                     float amnt_leaving_old_adj = bond_ev_exch_data[old_adj_idx];
+                    float amt_old_adj = this->get(old_adj).data.solid_mass;
                     //float prop_leaving_old_adj = amnt_leaving_old_adj / max(0.00001f,this->get(old_adj).data.solid_mass);
                     CubeCoord dir = old_adj - old_base;
                     if(is_valid_bond(dir)){
                         float old_bond_strength = this->get_bond(old_base,dir);
-                        float bond_moved_energy = (old_bond_strength * amnt_leaving_old_base * amnt_leaving_old_adj) / (0.000001f+amnt_leaving_old_adj + amnt_leaving_old_base);
-                        new_bond_energy += bond_moved_energy;
+                        float old_bond_energy = (old_bond_strength * amt_old_base * amt_old_adj) / (0.000001f+amt_old_base + amt_old_adj);
+                        float energy_left = old_bond_energy*amnt_leaving_old_adj*amnt_leaving_old_base/(0.000001f+amt_old_base * amt_old_adj);
+                        new_bond_energy += energy_left;
                     }
                 });
             });
-            float mass1 = this->get(base_coord).data.solid_mass;
-            float mass2 = this->get(bond_eval_coord).data.solid_mass;
-            float new_bond_coef = ((mass1 + mass2) * new_bond_energy) / (0.000001f + 2 * mass1 * mass2);
+            float mass1 = update_data.get(base_coord).data.solid_mass;
+            float mass2 = update_data.get(bond_eval_coord).data.solid_mass;
+            float new_bond_coef = ((mass1 + mass2) * new_bond_energy) / (0.000001f +  mass1 * mass2);
             update_data.get_bond(base_coord,bond_offset) = new_bond_coef;
 
             if(counter % 10000 == 0){
                 //cout << new_bond_strength <<endl;
             }
             if(new_bond_coef < 0){
-                cout << new_bond_coef <<endl;
+                //cout << new_bond_coef <<endl;
             }
             counter++;
         });
