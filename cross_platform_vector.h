@@ -43,3 +43,6 @@ inline Vec3F coord_to_vec(CubeCoord c){
 inline float dot_prod(Vec3F v1, Vec3F v2){
     return glm::dot(v1,v2);
 }
+inline Vec3F normalize(Vec3F v){
+    return glm::normalize(v);
+}

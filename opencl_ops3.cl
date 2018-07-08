@@ -1,7 +1,114 @@
-#include "update.h"
-#include "parameters.h"
+// important mechanical constants, feel free to fidle with these
+#define seconds_per_calc 0.0001f
+#define attraction_force_coef 10000.0f
+#define liquid_pressure_coef 0.8f
+#define solid_pressure_coef 0.01f
+#define gass_pressure_coef 10.0f
+#define gravity_constant 5000.0f
+#define repell_coef 2000.0f
+#define bond_strength_coef 5000000.0f
 
-using namespace  std;
+//cube size, feel free to change
+#define size_cube 22
+
+#define powf pow
+
+//programatic constants, do not change ever
+#define SIDES_ON_CUBE 6
+
+#define EXCHANGE_LEN 7
+#define STATIC_EXCH_IDX EXCHANGE_LEN-1
+
+#define NUM_BONDS_PER_CUBE 27
+
+struct CubeCoord_{
+    int x;
+    int y;
+    int z;
+};
+#define CubeCoord struct CubeCoord_
+#define Vec3F float4
+
+inline CubeCoord add_coord(CubeCoord a,CubeCoord b){
+    CubeCoord coord = {a.x + b.x, a.y + b.y, a.z + b.z};
+    return coord;
+}
+inline CubeCoord sub_coord(CubeCoord a,CubeCoord b){
+    CubeCoord coord = {a.x - b.x, a.y - b.y, a.z - b.z};
+    return coord;
+}
+inline float square(float x){
+    return x * x;
+}
+inline int sqr(int x){
+    return x * x;
+}
+inline int sqr_len(CubeCoord c){
+    return sqr(c.x) + sqr(c.y) + sqr(c.z);
+}
+
+
+Vec3F zero_vec(){
+    Vec3F zero = {0,0,0,0};
+    return zero;
+}
+Vec3F build_vec(float x, float y, float z){
+    Vec3F res = {x,y,z,0};
+    return res;
+}
+#define dot_prod dot
+Vec3F coord_to_vec(CubeCoord c){
+    return build_vec(c.x,c.y,c.z);
+}
+struct QuantityInfo_{
+    float air_mass;
+    float liquid_mass;
+    float solid_mass;
+    float __no_use_padding;
+    Vec3F vec;
+};
+#define QuantityInfo struct QuantityInfo_
+
+int int_pow3(int x){
+    return x * x * x;
+}
+
+int data_size(){
+    return int_pow3(size_cube+2);
+}
+int c_idx(CubeCoord c){
+    return ((c.x+1)*(size_cube+1) + (c.y+1))*(size_cube+1) + (c.z+1);
+}
+QuantityInfo * get(QuantityInfo * data,CubeCoord c){
+    return data + c_idx(c);
+}
+
+bool is_in_axis_bounds(int val){
+    return val >= 0 && val < size_cube;
+}
+bool is_valid_cube(CubeCoord c){
+    return
+        is_in_axis_bounds(c.x) &&
+        is_in_axis_bounds(c.y) &&
+        is_in_axis_bounds(c.z);
+}
+
+float mass(const QuantityInfo * info){
+    return info->air_mass + info->liquid_mass + info->solid_mass;
+}
+
+int bond_coord_offset(CubeCoord o){
+    return ((o.x+1) * 3 + (o.y+1)) * 3 + (o.z + 1);
+}
+float * get_coord_bond_block_start(float * bond_data, CubeCoord c){
+    return bond_data + c_idx(c) * NUM_BONDS_PER_CUBE;
+}
+float * get_bond(float * bond_data,CubeCoord coord, CubeCoord dir){
+    int offset = bond_coord_offset(dir);
+    return get_coord_bond_block_start(bond_data,coord) + offset;
+}
+void update_coord_quantity(QuantityInfo * source_data, float * source_bonds, QuantityInfo * update_data, float * all_exchange_data, CubeCoord base_coord);
+void update_bonds(QuantityInfo * source_data, QuantityInfo * updated_data, float * source_bonds, float * all_exchange_data, float * update_bonds, CubeCoord base_coord);
 
 
 CubeCoord rotate_coord(CubeCoord c){
@@ -50,17 +157,19 @@ bool is_valid_bond(CubeCoord offset){
         } \
     }}
 
-struct VectorAttraction{
+struct VectorAttraction_{
     Vec3F force_vec;
 };
+#define VectorAttraction struct VectorAttraction_
 
 void add_quantity(QuantityInfo * dest, QuantityInfo * src);
 void subtract_quantity(QuantityInfo * dest, QuantityInfo * src);
 
-struct CubeChangeInfo{
+struct CubeChangeInfo_{
     VectorAttraction force_shift;
     QuantityInfo quantity_shift;
 };
+#define CubeChangeInfo struct CubeChangeInfo_
 
 float * exch_data_at(float * exch_data,CubeCoord c){
     return exch_data + c_idx(c) * EXCHANGE_LEN;
@@ -74,7 +183,6 @@ void add_quantity(QuantityInfo * dest, QuantityInfo * src){
     dest->air_mass += src->air_mass;
     dest->liquid_mass += src->liquid_mass;
     dest->solid_mass += src->solid_mass;
-    assert(dest->air_mass >= 0);
 }
 void subtract_quantity(QuantityInfo * dest, QuantityInfo * src){
     dest->vec = mass(dest) - mass(src) < 1e-10f ?
@@ -84,13 +192,11 @@ void subtract_quantity(QuantityInfo * dest, QuantityInfo * src){
     dest->air_mass -= src->air_mass;
     dest->liquid_mass -= src->liquid_mass;
     dest->solid_mass -= src->solid_mass;
-    assert(dest->air_mass >= 0);
 }
 
 Vec3F reflect_vector_along(Vec3F vector, Vec3F cube_dir){
     //reflects the vector in opposite direction of the cube_dir
     float mag_incident = dot_prod(vector,cube_dir);
-    //assert(mag_incident >= 0);
     float dampen_value = 0.1f;
     Vec3F refl_vec = vector - cube_dir * mag_incident * (2.0f - dampen_value);
     return refl_vec;
@@ -183,7 +289,7 @@ void update_coord_quantity(QuantityInfo * source_data, float * source_bonds, Qua
             float attract_force = base_mass * adj_mass * bond_val / (0.000001f+sqrt(distance)*(base_mass + adj_mass));
             float repell_force = (repell_coef * base_orig_quanity.solid_mass * adj_quantity.solid_mass) /  (0.000001f+sqrt(distance)*(base_orig_quanity.solid_mass  + adj_quantity.solid_mass));
             float accel = (attract_force - repell_force) / (mass(&base_orig_quanity) + 0.00001f);
-            Vec3F accel_bond_val = accel * glm::normalize(coord_to_vec(offset));
+            Vec3F accel_bond_val = accel * normalize(coord_to_vec(offset));
             bond_accel += accel_bond_val * seconds_per_calc;
             /*
             if(distance == 1){
@@ -222,7 +328,6 @@ void update_coord_quantity(QuantityInfo * source_data, float * source_bonds, Qua
             amount_mass_untranfered -= max(0.0f,-total_exchange);//add_vec.solid_mass;
         }
         else{
-            //assert(change_info.force_shift.force_vec == Vec3F(0,0,0));
             //is border cube
             QuantityInfo reflected_vector = add_vec;
             reflected_vector.vec = reflect_vector_along(add_vec.vec,cube_dir);

@@ -18,7 +18,7 @@ include_directories(external/opencl-2.2)
 
 
 add_executable(cl_prac
-    cell_update_main.cpp
+    opencl_cell_update_main.cpp
        cube_coords.cpp
        display_ops.cpp
        update.cpp

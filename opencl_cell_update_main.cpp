@@ -11,9 +11,6 @@
 
 RenderBufferData all_buffer_data;
 
-inline int int_pow3(int x){
-    return x * x * x;
-}
 class CubeSharedData{
 private:
     vector<QuantityInfo> cube_data;
@@ -34,7 +31,7 @@ public:
         copy(buffer.begin(),buffer.end(),cube_data.begin());
         lock.unlock();
     }
-} cube_shared_data(int_pow3(size_cube+2));
+} cube_shared_data(data_size());
 
 void cell_triagulize_main_loop(){
     FrameRateControl cube_update_count(10.0);
@@ -60,14 +57,14 @@ void cell_triagulize_main_loop(){
 }
 
 void cell_update_main_loop(){
-    int all_cube_size = int_pow3(size_cube+2);
+    int all_cube_size = data_size();
     vector<QuantityInfo> cpu_buf = create_quantity_data_vec();
     cube_shared_data.write(cpu_buf);
 
     std::thread renderize_thread(cell_triagulize_main_loop);
     renderize_thread.detach();
 
-    OpenCLExecutor executor("opencl_ops2.cl");
+    OpenCLExecutor executor("opencl_ops3.cl");
     CLBuffer<QuantityInfo> all_cubes_buf = executor.new_clbuffer<QuantityInfo>(all_cube_size);
     CLBuffer<QuantityInfo> update_buf = executor.new_clbuffer<QuantityInfo>(all_cube_size);
     CLKernel update_kern = executor.new_clkernel("update_coords",CL_NDRange(size_cube,size_cube,size_cube),{all_cubes_buf.k_arg(),update_buf.k_arg()});
@@ -107,6 +104,7 @@ void cell_update_main_loop(){
         }
     }
 }
+//#define NO_GRAPHICS
 #ifdef NO_GRAPHICS
 int main(){
     cell_update_main_loop();
