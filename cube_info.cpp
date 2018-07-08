@@ -78,7 +78,7 @@ CubeChangeInfo CubeInfo::get_bordering_quantity_vel(const CubeInfo & other_cube,
     return CubeChangeInfo{attract_info,final_quantity};
 }
 RGBVal CubeInfo::color(){
-    return RGBVal{1.0f-std::min(abs(data.air_mass)/2.0f,1.0f),1.0f-std::min(abs(data.solid_mass)/1000.0f,1.0f),1.0f-std::min(abs(data.liquid_mass)/800.0f,1.0f),1.0};//,std::min(abs(data.air_mass)/2.0f,1.0f)};
+    return RGBVal{1.0f-std::min(abs(data.air_mass)/20.0f,1.0f),1.0f-std::min(abs(data.solid_mass)/1000.0f,1.0f),1.0f-std::min(abs(data.liquid_mass)/800.0f,1.0f),1.0};//,std::min(abs(data.air_mass)/2.0f,1.0f)};
 }
 bool CubeInfo::is_transparent(){
     return data.mass() < 3;
