@@ -39,7 +39,7 @@ public:
 void cell_triagulize_main_loop(){
     FrameRateControl cube_update_count(10.0);
 
-    vector<QuantityInfo> cube_buf = create_data_vec();
+    vector<QuantityInfo> cube_buf = create_quantity_data_vec();
     while(true){
         if(cube_update_count.should_render()){
             cube_update_count.rendered();
@@ -61,7 +61,7 @@ void cell_triagulize_main_loop(){
 
 void cell_update_main_loop(){
     int all_cube_size = int_pow3(size_cube+2);
-    vector<QuantityInfo> cpu_buf = create_data_vec();
+    vector<QuantityInfo> cpu_buf = create_quantity_data_vec();
     cube_shared_data.write(cpu_buf);
 
     std::thread renderize_thread(cell_triagulize_main_loop);

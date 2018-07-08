@@ -14,11 +14,6 @@ void visit_all_coords(visit_fn_ty visit_fn){
         }
     }
 }
-void update(QuantityInfo * source_data, QuantityInfo * update_data){
-    visit_all_coords([&](CubeCoord base_coord){
-        update_coords(source_data,update_data,base_coord.x,base_coord.y,base_coord.z);
-    });
-}
 
 void cell_update_main_loop(){
     FrameRateControl cell_automata_update_count(1000.0);
@@ -26,8 +21,17 @@ void cell_update_main_loop(){
     FrameRateControl cube_update_count(20.0);
 
     int num_cube_updates = 0;
-    QuantityInfo * all_cubes = create_data();
-    QuantityInfo * update_tmp = create_data();
+    vector<QuantityInfo> all_cubes_vec = create_quantity_data_vec();
+    vector<QuantityInfo> update_tmp_vec = all_cubes_vec;
+    QuantityInfo * all_cubes = all_cubes_vec.data();
+    QuantityInfo * update_tmp = update_tmp_vec.data();
+
+    vector<float> all_bonds_vec = create_bond_vec(all_cubes);
+    vector<float> update_tmp_bonds_vec = all_bonds_vec;
+    vector<float> exchange_vec = create_exchange_vec();
+    float * all_bonds = all_bonds_vec.data();
+    float * update_tmp_bonds = update_tmp_bonds_vec.data();
+    float * exchange = exchange_vec.data();
 
     while(true){
         cout << "arg!" << endl;
@@ -39,8 +43,16 @@ void cell_update_main_loop(){
         }
         if(cell_automata_update_count.should_render()){
             cell_automata_update_count.rendered();
-            update(all_cubes,update_tmp);
+
+            visit_all_coords([&](CubeCoord base_coord){
+                update_coord_quantity(all_cubes,all_bonds,update_tmp,exchange,base_coord);
+            });
+            visit_all_coords([&](CubeCoord base_coord){
+                update_bonds(all_cubes,update_tmp,all_bonds,exchange,update_tmp_bonds,base_coord);
+            });
+
             swap(update_tmp,all_cubes);
+            swap(all_bonds,update_tmp_bonds);
             ++num_cube_updates;
         }
         if(cube_update_count.should_render()){
@@ -59,6 +71,7 @@ void cell_update_main_loop(){
         }
     }
 }
+//#define RUN_NO_GRAPHICS
 #ifdef RUN_NO_GRAPHICS
 int main(){
     cell_update_main_loop();

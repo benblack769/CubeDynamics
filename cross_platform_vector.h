@@ -13,6 +13,19 @@ inline CubeCoord add_coord(CubeCoord a,CubeCoord b){
     CubeCoord coord = {a.x + b.x, a.y + b.y, a.z + b.z};
     return coord;
 }
+inline CubeCoord sub_coord(CubeCoord a,CubeCoord b){
+    CubeCoord coord = {a.x - b.x, a.y - b.y, a.z - b.z};
+    return coord;
+}
+inline float square(float x){
+    return x * x;
+}
+inline int sqr(int x){
+    return x * x;
+}
+inline int sqr_len(CubeCoord c){
+    return sqr(c.x) + sqr(c.y) + sqr(c.z);
+}
 
 using Vec3F = glm::vec4;
 inline void debug_print(Vec3F vec){
