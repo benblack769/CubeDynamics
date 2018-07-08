@@ -4,3 +4,4 @@ bin
 *.exe
 external
 *.user
+full_cl.cl

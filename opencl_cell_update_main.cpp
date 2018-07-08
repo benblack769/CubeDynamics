@@ -7,7 +7,7 @@
 #include "cell_update_main.h"
 #include "update.h"
 #include "display_ops.h"
-
+using namespace  std;
 
 RenderBufferData all_buffer_data;
 
@@ -55,7 +55,12 @@ void cell_triagulize_main_loop(){
         }
     }
 }
-
+void concat_files(string outfilename,string filename1, string filename2){
+    std::ifstream file1( filename1 ) ;
+    std::ifstream file2( filename2 ) ;
+    std::ofstream combined_file( outfilename ) ;
+    combined_file << file1.rdbuf() << file2.rdbuf() ;
+}
 void cell_update_main_loop(){
     int all_cube_size = data_size();
     vector<QuantityInfo> quant_cpu_buf = create_quantity_data_vec();
@@ -66,7 +71,8 @@ void cell_update_main_loop(){
     std::thread renderize_thread(cell_triagulize_main_loop);
     renderize_thread.detach();
 
-    OpenCLExecutor executor("opencl_ops3.cl");
+    concat_files("full_cl.cl","parameters.h","opencl_ops3.cl");
+    OpenCLExecutor executor("full_cl.cl");
     CLBuffer<QuantityInfo> all_quant_buf = executor.new_clbuffer<QuantityInfo>(all_cube_size);
     CLBuffer<QuantityInfo> update_quant_buf = executor.new_clbuffer<QuantityInfo>(all_cube_size);
 
