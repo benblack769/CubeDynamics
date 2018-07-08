@@ -58,23 +58,39 @@ void cell_triagulize_main_loop(){
 
 void cell_update_main_loop(){
     int all_cube_size = data_size();
-    vector<QuantityInfo> cpu_buf = create_quantity_data_vec();
-    cube_shared_data.write(cpu_buf);
+    vector<QuantityInfo> quant_cpu_buf = create_quantity_data_vec();
+    vector<float> bonds_cpu_buf = create_bond_vec(quant_cpu_buf.data());
+
+    cube_shared_data.write(quant_cpu_buf);
 
     std::thread renderize_thread(cell_triagulize_main_loop);
     renderize_thread.detach();
 
     OpenCLExecutor executor("opencl_ops3.cl");
-    CLBuffer<QuantityInfo> all_cubes_buf = executor.new_clbuffer<QuantityInfo>(all_cube_size);
-    CLBuffer<QuantityInfo> update_buf = executor.new_clbuffer<QuantityInfo>(all_cube_size);
-    CLKernel update_kern = executor.new_clkernel("update_coords",CL_NDRange(size_cube,size_cube,size_cube),{all_cubes_buf.k_arg(),update_buf.k_arg()});
+    CLBuffer<QuantityInfo> all_quant_buf = executor.new_clbuffer<QuantityInfo>(all_cube_size);
+    CLBuffer<QuantityInfo> update_quant_buf = executor.new_clbuffer<QuantityInfo>(all_cube_size);
+
+    CLBuffer<float> all_bonds_buf = executor.new_clbuffer<float>(all_cube_size*NUM_BONDS_PER_CUBE);
+    CLBuffer<float> update_bonds_buf = executor.new_clbuffer<float>(all_cube_size*NUM_BONDS_PER_CUBE);
+
+    CLBuffer<float> exchange_buf = executor.new_clbuffer<float>(all_cube_size*EXCHANGE_LEN);
+
+    CLKernel update_quant_kern = executor.new_clkernel(
+                "update_coord_quantity",
+                CL_NDRange(size_cube,size_cube,size_cube),
+                {all_quant_buf.k_arg(),all_bonds_buf.k_arg(),update_quant_buf.k_arg(),exchange_buf.k_arg()});
+
+    CLKernel update_bond_kern = executor.new_clkernel(
+                "update_bonds",
+                CL_NDRange(size_cube,size_cube,size_cube),
+                {all_quant_buf.k_arg(),update_quant_buf.k_arg(),all_bonds_buf.k_arg(),exchange_buf.k_arg(),update_bonds_buf.k_arg()});
 
     FrameRateControl cell_automata_update_count(1000.0);
     FrameRateControl update_speed_output_count(1.0);
     FrameRateControl cube_update_count(20.0);
 
-    all_cubes_buf.write_buffer(cpu_buf);
-    update_buf.write_buffer(cpu_buf);
+    all_quant_buf.write_buffer(quant_cpu_buf);
+    update_quant_buf.write_buffer(quant_cpu_buf);
 
     int num_cube_updates = 0;
 
@@ -82,8 +98,8 @@ void cell_update_main_loop(){
         //cout << "arg!" << endl;
         if(cube_update_count.should_render()){
             cube_update_count.rendered();
-            all_cubes_buf.read_buffer(cpu_buf);
-            cube_shared_data.write(cpu_buf);
+            all_quant_buf.read_buffer(quant_cpu_buf);
+            cube_shared_data.write(quant_cpu_buf);
         }
         if(update_speed_output_count.should_render()){
             double duration_since_render = update_speed_output_count.duration_since_render();
@@ -93,8 +109,10 @@ void cell_update_main_loop(){
         }
         if(cell_automata_update_count.should_render()){
             cell_automata_update_count.rendered();
-            update_kern.run();
-            all_cubes_buf.copy_buffer(update_buf);
+            update_quant_kern.run();
+            update_bond_kern.run();
+            all_quant_buf.copy_buffer(update_quant_buf);
+            all_bonds_buf.copy_buffer(update_bonds_buf);
             ++num_cube_updates;
         }
         if(!cube_update_count.should_render() &&

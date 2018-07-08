@@ -79,7 +79,7 @@ int data_size(){
 int c_idx(CubeCoord c){
     return ((c.x+1)*(size_cube+1) + (c.y+1))*(size_cube+1) + (c.z+1);
 }
-QuantityInfo * get(QuantityInfo * data,CubeCoord c){
+global QuantityInfo * get(global QuantityInfo * data,CubeCoord c){
     return data + c_idx(c);
 }
 
@@ -100,16 +100,13 @@ float mass(const QuantityInfo * info){
 int bond_coord_offset(CubeCoord o){
     return ((o.x+1) * 3 + (o.y+1)) * 3 + (o.z + 1);
 }
-float * get_coord_bond_block_start(float * bond_data, CubeCoord c){
+global float * get_coord_bond_block_start(global float * bond_data, CubeCoord c){
     return bond_data + c_idx(c) * NUM_BONDS_PER_CUBE;
 }
-float * get_bond(float * bond_data,CubeCoord coord, CubeCoord dir){
+global float * get_bond(global float * bond_data,CubeCoord coord, CubeCoord dir){
     int offset = bond_coord_offset(dir);
     return get_coord_bond_block_start(bond_data,coord) + offset;
 }
-void update_coord_quantity(QuantityInfo * source_data, float * source_bonds, QuantityInfo * update_data, float * all_exchange_data, CubeCoord base_coord);
-void update_bonds(QuantityInfo * source_data, QuantityInfo * updated_data, float * source_bonds, float * all_exchange_data, float * update_bonds, CubeCoord base_coord);
-
 
 CubeCoord rotate_coord(CubeCoord c){
     CubeCoord res = {c.y,c.z,c.x};
@@ -171,7 +168,7 @@ struct CubeChangeInfo_{
 };
 #define CubeChangeInfo struct CubeChangeInfo_
 
-float * exch_data_at(float * exch_data,CubeCoord c){
+global float * exch_data_at(global float * exch_data,CubeCoord c){
     return exch_data + c_idx(c) * EXCHANGE_LEN;
 }
 
@@ -268,7 +265,12 @@ CubeChangeInfo get_bordering_quantity_vel(QuantityInfo current, QuantityInfo oth
 float mass_conv(float m){
     return powf(m,1.0f/3.0f);
 }
-void update_coord_quantity(QuantityInfo * source_data, float * source_bonds, QuantityInfo * update_data, float * all_exchange_data, CubeCoord base_coord){
+kernel void update_coord_quantity(global QuantityInfo * source_data, global float * source_bonds, global QuantityInfo * update_data, global float * all_exchange_data){
+    CubeCoord base_coord = {
+        get_global_id(0),
+        get_global_id(1),
+        get_global_id(2)
+    };
     Vec3F global_gravity_vector = build_vec(0,-gravity_constant * seconds_per_calc,0);
 
     const QuantityInfo base_orig_quanity = *get(source_data,base_coord);
@@ -302,7 +304,7 @@ void update_coord_quantity(QuantityInfo * source_data, float * source_bonds, Qua
     });
 
     Vec3F total_accel_val = zero_vec();
-    float * base_exchange_data = exch_data_at(all_exchange_data,base_coord);
+    global float * base_exchange_data = exch_data_at(all_exchange_data,base_coord);
     float amount_mass_untranfered = base_orig_quanity.solid_mass;
 
     int offset_index;
@@ -340,8 +342,13 @@ void update_coord_quantity(QuantityInfo * source_data, float * source_bonds, Qua
     total_quanity.vec += total_accel_val + global_gravity_vector + bond_accel;
     *get(update_data,base_coord) = total_quanity;
 }
-void update_bonds(QuantityInfo * source_data, QuantityInfo * updated_data, float * source_bonds, float * all_exchange_data, float * update_bonds, CubeCoord base_coord){
-    float * base_exchange_data = exch_data_at(all_exchange_data,base_coord);
+kernel void update_bonds(global QuantityInfo * source_data, global QuantityInfo * updated_data, global float * source_bonds, global float * all_exchange_data, global float * update_bonds){
+    CubeCoord base_coord = {
+        get_global_id(0),
+        get_global_id(1),
+        get_global_id(2)
+    };
+    global float * base_exchange_data = exch_data_at(all_exchange_data,base_coord);
     CubeCoord bond_offset;
     visit_all_coords_1_box(bond_offset,{
         CubeCoord bond_eval_coord = add_coord(base_coord,bond_offset);
@@ -349,7 +356,7 @@ void update_bonds(QuantityInfo * source_data, QuantityInfo * updated_data, float
             return;
         }
         float new_bond_energy = 0;
-        float * bond_ev_exch_data = exch_data_at(all_exchange_data,bond_eval_coord);
+        global float * bond_ev_exch_data = exch_data_at(all_exchange_data,bond_eval_coord);
         int old_base_idx;
         CubeCoord old_base_offset;
         visit_all_adjacent_plus_center(old_base_offset,old_base_idx,{
