@@ -77,12 +77,12 @@ void init_quantity_data(QuantityInfo * data){
     visit_all_coords([&](CubeCoord c){
         *get(data,c) = random_init();
     });
-    visit_all_coords_between(CubeCoord{2,2,2},CubeCoord{12,12,12},[&](CubeCoord coord){
+    visit_all_coords_between(CubeCoord{2,2,2},CubeCoord{15,15,15},[&](CubeCoord coord){
         get(data,coord)->solid_mass = solid_mass_start_val + rand()/float(RAND_MAX);
     });
-    visit_all_coords_between(CubeCoord{17,6,6},CubeCoord{19,8,8},[&](CubeCoord coord){
+    visit_all_coords_between(CubeCoord{17,4,4},CubeCoord{19,6,6},[&](CubeCoord coord){
         get(data,coord)->solid_mass = solid_mass_start_val + rand()/float(RAND_MAX);
-        get(data,coord)->vec = build_vec(1000,0,0);
+        get(data,coord)->vec = build_vec(-1000,0,0);
     });
 }
 std::vector<QuantityInfo> create_quantity_data_vec(){

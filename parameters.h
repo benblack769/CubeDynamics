@@ -1,5 +1,5 @@
 // important mechanical constants, feel free to fidle with these
-#define seconds_per_calc 0.000001f
+#define seconds_per_calc 0.000005f
 #define attraction_force_coef 10000.0f
 #define liquid_pressure_coef 0.8f
 #define solid_pressure_coef 0.01f
