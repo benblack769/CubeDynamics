@@ -1,7 +1,7 @@
 #include "display_ops.h"
 #include "parameters.h"
 
-constexpr float solid_mass_start_val = 100;
+constexpr float solid_mass_start_val = 60;
 
 template<class visit_fn_ty>
 void visit_all_coords(visit_fn_ty visit_fn){
@@ -82,7 +82,7 @@ void init_quantity_data(QuantityInfo * data){
     });
     visit_all_coords_between(CubeCoord{17,4,4},CubeCoord{19,6,6},[&](CubeCoord coord){
         get(data,coord)->solid_mass = solid_mass_start_val + rand()/float(RAND_MAX);
-        get(data,coord)->vec = build_vec(-1000,0,0);
+        //get(data,coord)->vec = build_vec(-1000,0,0);
     });
 }
 std::vector<QuantityInfo> create_quantity_data_vec(){
@@ -102,7 +102,7 @@ std::vector<float> create_bond_vec(QuantityInfo * quantities){
             float bond_strength = bond_strength_coef *
                     get(quantities,coord)->solid_mass *
                     get(quantities,new_coord)->solid_mass /
-                    (square(solid_mass_start_val) * (1+sqr_len(offset)));
+                    (square(solid_mass_start_val));
             *get_bond(res.data(),coord,offset) = bond_strength;
         });
     });
