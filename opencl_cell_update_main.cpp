@@ -2,6 +2,7 @@
 #include <vector>
 #include <iostream>
 #include <mutex>
+#include <algorithm>
 #include <thread>
 
 #include "cell_update_main.h"
@@ -98,6 +99,9 @@ void cell_update_main_loop(){
     all_quant_buf.write_buffer(quant_cpu_buf);
     update_quant_buf.write_buffer(quant_cpu_buf);
 
+    all_bonds_buf.write_buffer(bonds_cpu_buf);
+    update_bonds_buf.write_buffer(bonds_cpu_buf);
+
     int num_cube_updates = 0;
 
     while(true){
@@ -119,6 +123,10 @@ void cell_update_main_loop(){
             update_bond_kern.run();
             all_quant_buf.copy_buffer(update_quant_buf);
             all_bonds_buf.copy_buffer(update_bonds_buf);
+
+            all_bonds_buf.read_buffer(bonds_cpu_buf);
+            cout << "max bond str: " << *max_element(bonds_cpu_buf.begin(),bonds_cpu_buf.end()) << endl;
+
             ++num_cube_updates;
         }
         if(!cube_update_count.should_render() &&

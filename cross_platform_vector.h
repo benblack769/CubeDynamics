@@ -17,6 +17,9 @@ inline CubeCoord sub_coord(CubeCoord a,CubeCoord b){
     CubeCoord coord = {a.x - b.x, a.y - b.y, a.z - b.z};
     return coord;
 }
+inline void debug_print(CubeCoord vec){
+    std::cout << "(" << vec.x << ',' << vec.y << ',' << vec.z << ")" << std::endl;
+}
 inline float square(float x){
     return x * x;
 }

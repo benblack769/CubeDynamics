@@ -232,6 +232,9 @@ void update_coord_quantity(QuantityInfo * source_data, float * source_bonds, Qua
             base_exchange_data[offset_index] = 0;
         }
     });
+
+    base_exchange_data[STATIC_EXCH_IDX] = amount_mass_untranfered;
+
     total_quanity.vec += total_accel_val + global_gravity_vector + bond_accel;
     *get(update_data,base_coord) = total_quanity;
 }
@@ -273,8 +276,5 @@ void update_bonds(QuantityInfo * source_data, QuantityInfo * updated_data, float
         float new_bond_coef = ((mass1 + mass2) * new_bond_energy) / (0.000001f +  mass1 * mass2);
         *get_bond(update_bonds,base_coord,bond_offset) = new_bond_coef;
         float old_bond_coef = *get_bond(source_bonds,base_coord,bond_offset);
-        if(old_bond_coef * 0.2 > new_bond_coef){
-            cout << "too large diff: " << old_bond_coef << " -- " << new_bond_coef << endl;
-        }
     });
 }

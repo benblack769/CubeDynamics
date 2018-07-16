@@ -1,6 +1,7 @@
 #include "cell_update_main.h"
 #include "update.h"
 #include "display_ops.h"
+#include <algorithm>
 
 RenderBufferData all_buffer_data;
 
@@ -53,6 +54,7 @@ void cell_update_main_loop(){
 
             swap(update_tmp,all_cubes);
             swap(all_bonds,update_tmp_bonds);
+            cout << "max bond str: " << *max_element(all_bonds_vec.begin(),all_bonds_vec.end()) << endl;
             ++num_cube_updates;
         }
         if(cube_update_count.should_render()){

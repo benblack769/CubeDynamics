@@ -318,6 +318,9 @@ kernel void update_coord_quantity(global QuantityInfo * source_data, global floa
             base_exchange_data[offset_index] = 0;
         }
     });
+
+    base_exchange_data[STATIC_EXCH_IDX] = amount_mass_untranfered;
+
     total_quanity.vec += total_accel_val + global_gravity_vector + bond_accel;
     *get(update_data,base_coord) = total_quanity;
 }
