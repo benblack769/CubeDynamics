@@ -100,9 +100,9 @@ std::vector<float> create_bond_vec(QuantityInfo * quantities){
         visit_all_coords_1_box([&](CubeCoord offset){
             CubeCoord new_coord = add_coord(coord, offset);
             float bond_strength = bond_strength_coef *
-                    get(quantities,coord)->solid_mass *
+                    (get(quantities,coord)->solid_mass *
                     get(quantities,new_coord)->solid_mass /
-                    (square(solid_mass_start_val));
+                    (square(solid_mass_start_val)));
             *get_bond(res.data(),coord,offset) = bond_strength;
         });
     });

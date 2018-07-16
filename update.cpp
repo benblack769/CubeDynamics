@@ -272,5 +272,9 @@ void update_bonds(QuantityInfo * source_data, QuantityInfo * updated_data, float
         float mass2 = get(updated_data,bond_eval_coord)->solid_mass;
         float new_bond_coef = ((mass1 + mass2) * new_bond_energy) / (0.000001f +  mass1 * mass2);
         *get_bond(update_bonds,base_coord,bond_offset) = new_bond_coef;
+        float old_bond_coef = *get_bond(source_bonds,base_coord,bond_offset);
+        if(old_bond_coef * 0.2 > new_bond_coef){
+            cout << "too large diff: " << old_bond_coef << " -- " << new_bond_coef << endl;
+        }
     });
 }

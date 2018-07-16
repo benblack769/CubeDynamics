@@ -6,7 +6,7 @@
 #define gass_pressure_coef 10.0f
 #define gravity_constant 5000.0f
 #define repell_coef 2000.0f
-#define bond_strength_coef 5000000.0f
+#define bond_strength_coef 500000000.0f
 
 //cube size, feel free to change
 #define size_cube 30
