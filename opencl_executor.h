@@ -5,6 +5,7 @@
 #include <cassert>
 
 //#include <cl.hpp>
+#define CL_TARGET_OPENCL_VERSION 110
 #include <CL/cl.h>
 //#include <CL/cl_platform.h>
 
@@ -67,6 +68,20 @@ void CheckErrorAt(cl_int err,const char * source_info){
         exit(err);
     }
 }
+cl_int CLEnqueueBarrier(cl_command_queue command_queue){
+#if CL_TARGET_OPENCL_VERSION >= 120
+    return clEnqueueBarrierWithWaitList(command_queue,0,NULL,NULL);
+#else
+    return clEnqueueBarrier(command_queue);
+#endif
+}
+cl_command_queue CLCreateCommandQueue(cl_context context, cl_device_id device, cl_int * errcode_ret){
+#if CL_TARGET_OPENCL_VERSION >= 200
+    return clCreateCommandQueueWithProperties(context,device,NULL,errcode_ret);
+#else
+    return clCreateCommandQueue(context,device,0,errcode_ret);
+#endif
+}
 #define STR_HELPER(x) #x
 #define CONST_STR(x) STR_HELPER(x)
 #define CheckError(err) {CheckErrorAt(err,("File: " __FILE__ ", Line: " CONST_STR(__LINE__)));}
@@ -119,7 +134,7 @@ public:
         assert(src_buf.bufsize == this->bufsize);
         assert(src_buf.myqueue == this->myqueue);
         assert(src_buf.mycontext == this->mycontext);
-        CheckError(clEnqueueBarrier(myqueue));
+        CheckError(CLEnqueueBarrier(myqueue));
         CheckError(clEnqueueCopyBuffer(myqueue,
                             src_buf.buf,this->buf,
                             0,0,
@@ -200,7 +215,7 @@ public:
         }
     }
     void run(){
-        CheckError(clEnqueueBarrier(myqueue));
+        CheckError(CLEnqueueBarrier(myqueue));
         CheckError(clEnqueueNDRangeKernel(
                        myqueue,
                        kern,
@@ -305,11 +320,10 @@ protected:
         std::cout << "Context created" << std::endl;
     }
     void create_queue(){
-        // http://www.khronos.org/registry/cl/sdk/1.1/docs/man/xhtml/clCreateCommandQueue.html
+        // https://www.khronos.org/registry/OpenCL/sdk/2.0/docs/man/xhtml/clCreateCommandQueueWithProperties.html
 
         cl_int error = CL_SUCCESS;
-        this->queue = clCreateCommandQueue (context, this->device,
-            0, &error);
+        this->queue = CLCreateCommandQueue (context, this->device, &error);
         CheckError (error);
     }
     void build_program(){
