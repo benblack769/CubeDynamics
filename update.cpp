@@ -27,10 +27,6 @@ struct CubeChangeInfo{
     VectorAttraction force_shift;
     QuantityInfo quantity_shift;
 };
-Vec3F even_orientation(float mass){
-    float cubrt = pow(mass,1.0f/3.0f);
-    return build_vec(cubrt,cubrt,cubrt);
-}
 Vec3F orient_add(Vec3F o1, float m1, Vec3F o2, float m2,CubeCoord dir){
     Vec3F o3;
     float mt = m1 + m2;
@@ -223,7 +219,6 @@ void update_coord_quantity(QuantityInfo * source_data, QuantityInfo * update_dat
 
             add_quantity(&total_quanity,&adj_change_info.quantity_shift,offset);
             subtract_quantity(&total_quanity,&add_vec,offset);
-                                count++;
         }
         else{
             //assert(change_info.force_shift.force_vec == Vec3F(0,0,0));
