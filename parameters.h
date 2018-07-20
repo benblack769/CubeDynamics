@@ -5,11 +5,11 @@
 #define liquid_pressure_coef 0.8f
 #define solid_pressure_coef 0.5f
 #define gass_pressure_coef 10.0f
-#define gravity_constant 1000.0f
+#define gravity_constant 3000.0f
 
 #define directional_solid_pressure 0.5f
 //cube size, feel free to change
-#define size_cube 30
+#define size_cube 50
 
 
 //programatic constants, do not change ever

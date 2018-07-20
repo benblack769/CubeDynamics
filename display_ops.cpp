@@ -1,7 +1,7 @@
 #include "display_ops.h"
 #include "parameters.h"
 
-constexpr float solid_mass_start_val = 60;
+constexpr float solid_mass_start_val = 100;
 
 template<class visit_fn_ty>
 void visit_all_coords(visit_fn_ty visit_fn){
@@ -88,12 +88,13 @@ void init_quantity_data(QuantityInfo * data){
     visit_all_coords([&](CubeCoord c){
         *get(data,c) = random_init();
     });
-    visit_all_coords_between(CubeCoord{2,2,2},CubeCoord{15,15,15},[&](CubeCoord coord){
+    visit_all_coords_between(CubeCoord{2,22,2},CubeCoord{25,35,25},[&](CubeCoord coord){
         *get(data,coord) = random_solid();
+        get(data,coord)->vec = build_vec(100,0,0);
     });
-    visit_all_coords_between(CubeCoord{17,4,4},CubeCoord{19,6,6},[&](CubeCoord coord){
-        *get(data,coord) = random_solid();
-       // get(data,coord)->vec = build_vec(-1000,0,0);
+    visit_all_coords_between(CubeCoord{10,5,5},CubeCoord{15,10,10},[&](CubeCoord coord){
+       *get(data,coord) = random_solid();
+       get(data,coord)->vec = build_vec(100,0,0);
     });
 }
 std::vector<QuantityInfo> create_quantity_data_vec(){

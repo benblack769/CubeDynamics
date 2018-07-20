@@ -105,7 +105,7 @@ Vec3F reflect_vector_along(Vec3F vector, Vec3F cube_dir){
     //reflects the vector in opposite direction of the cube_dir
     float mag_incident = dot_prod(vector,cube_dir);
     //assert(mag_incident >= 0);
-    float dampen_value = 0.1f;
+    float dampen_value = 0.0f;
     Vec3F refl_vec = vector - cube_dir * mag_incident * (2.0f - dampen_value);
     return refl_vec;
 }
