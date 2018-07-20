@@ -58,7 +58,12 @@ void cell_triagulize_main_loop(){
         }
     }
 }
-
+void concat_files(string outfilename,string filename1, string filename2){
+    std::ifstream file1( filename1 ) ;
+    std::ifstream file2( filename2 ) ;
+    std::ofstream combined_file( outfilename ) ;
+    combined_file << file1.rdbuf() << file2.rdbuf() ;
+}
 void cell_update_main_loop(){
     int all_cube_size = int_pow3(size_cube+2);
     vector<QuantityInfo> cpu_buf = create_data_vec();
@@ -67,7 +72,8 @@ void cell_update_main_loop(){
     std::thread renderize_thread(cell_triagulize_main_loop);
     renderize_thread.detach();
 
-    OpenCLExecutor executor("opencl_ops2.cl");
+    concat_files("full_cl.cl","parameters.h","opencl_ops2.cl");
+    OpenCLExecutor executor("full_cl.cl");
     CLBuffer<QuantityInfo> all_cubes_buf = executor.new_clbuffer<QuantityInfo>(all_cube_size);
     CLBuffer<QuantityInfo> update_buf = executor.new_clbuffer<QuantityInfo>(all_cube_size);
     CLKernel update_kern = executor.new_clkernel("update_coords",CL_NDRange(size_cube,size_cube,size_cube),{all_cubes_buf.k_arg(),update_buf.k_arg()});

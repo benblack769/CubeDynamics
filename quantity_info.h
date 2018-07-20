@@ -1,5 +1,6 @@
 #pragma once
 #include "cross_platform_vector.h"
+#include "parameters.h"
 
 struct QuantityInfo{
     float air_mass;
@@ -8,7 +9,6 @@ struct QuantityInfo{
     float __no_use_padding;
     Vec3F vec;
 };
-constexpr int size_cube = 50;
 
 QuantityInfo * get(QuantityInfo * data,CubeCoord c);
 

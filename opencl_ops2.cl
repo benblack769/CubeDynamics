@@ -1,9 +1,3 @@
-#define seconds_per_calc 0.0001f
-#define attraction_force_coef 50000.0f
-#define liquid_pressure_coef 0.8f
-#define solid_pressure_coef 0.5f
-#define gass_pressure_coef 10.0f
-#define gravity_constant 1000.0f
 
 struct CubeCoord_{
     int x;
@@ -37,7 +31,6 @@ struct QuantityInfo_{
     Vec3F vec;
 };
 #define QuantityInfo struct QuantityInfo_
-#define size_cube 50
 
 global QuantityInfo * get(global QuantityInfo * data,CubeCoord c){
     return data + (((c.x+1)*(size_cube+1) + (c.y+1))*(size_cube+1) + (c.z+1));
@@ -56,17 +49,18 @@ bool is_valid_cube(CubeCoord c){
 float mass(QuantityInfo * info){
     return info->air_mass + info->liquid_mass + info->solid_mass;
 }
-#define visit_all_adjacent_(iter_var,visit_code) \
+CubeCoord rotate_coord(CubeCoord c){
+    CubeCoord res = {c.y,c.z,c.x};
+    return res;
+}
+#define visit_all_adjacent_(coord_var ,visit_code) \
     {for(int n = -1; n <= 1; n += 2){ \
-        CubeCoord _new_iter = {n,0,0}; \
-        iter_var = _new_iter; \
-        {visit_code}; \
-        CubeCoord _new_iter2 = {0,n,0}; \
-        iter_var = _new_iter2; \
-        {visit_code}; \
-        CubeCoord _new_iter3 = {0,0,n}; \
-        iter_var = _new_iter3; \
-        {visit_code}; \
+        CubeCoord __input = {n,0,0}; \
+        for(int d = 0; d < 3; d++){ \
+            coord_var = __input;\
+            {visit_code} \
+            __input = rotate_coord(__input);\
+        }\
     }}
 float square(float x){
     return x * x;
@@ -82,8 +76,6 @@ struct CubeChangeInfo_{
 };
 #define CubeChangeInfo struct CubeChangeInfo_
 
-
-#define SIDES_ON_CUBE 6
 
 void add(QuantityInfo * dest, QuantityInfo * src){
     dest->vec = mass(dest) + mass(src) < 1e-10f ?
@@ -161,9 +153,9 @@ CubeChangeInfo get_bordering_quantity_vel(QuantityInfo current, QuantityInfo oth
     float basic_liquid_amt = max(0.0f,dot_prod(cube_direction,total_liquid_motion));
     float basic_solid_amt = max(0.0f,dot_prod(cube_direction,total_solid_motion));
 
-    float amt_air_given = min(basic_air_amt * current.air_mass * seconds_per_calc, current.air_mass/(0.01f+SIDES_ON_CUBE));
-    float amt_liquid_given = min(basic_liquid_amt * current.liquid_mass * seconds_per_calc,current.liquid_mass/(0.01f+SIDES_ON_CUBE));
-    float amt_solid_given = min(basic_solid_amt * current.solid_mass * seconds_per_calc,current.solid_mass/(0.01f+SIDES_ON_CUBE));
+    float amt_air_given = min(basic_air_amt * current.air_mass * seconds_per_calc, current.air_mass*(1.0f/(0.01f+SIDES_ON_CUBE)));
+    float amt_liquid_given = min(basic_liquid_amt * current.liquid_mass * seconds_per_calc,current.liquid_mass*(1.0f/(0.01f+SIDES_ON_CUBE)));
+    float amt_solid_given = min(basic_solid_amt * current.solid_mass * seconds_per_calc,current.solid_mass*(1.0f/(0.01f+SIDES_ON_CUBE)));
 
     /*
     QuantityInfo air_transfer_quantity = {amt_air_given,0,0, total_air_motion};

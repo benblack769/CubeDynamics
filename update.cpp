@@ -3,18 +3,18 @@
 
 using namespace  std;
 
-
-#define visit_all_adjacent_(iter_var,visit_code) \
+CubeCoord rotate_coord(CubeCoord c){
+    CubeCoord res = {c.y,c.z,c.x};
+    return res;
+}
+#define visit_all_adjacent_(coord_var ,visit_code) \
     {for(int n = -1; n <= 1; n += 2){ \
-        CubeCoord _new_iter = {n,0,0}; \
-        iter_var = _new_iter; \
-        {visit_code}; \
-        CubeCoord _new_iter2 = {0,n,0}; \
-        iter_var = _new_iter2; \
-        {visit_code}; \
-        CubeCoord _new_iter3 = {0,0,n}; \
-        iter_var = _new_iter3; \
-        {visit_code}; \
+        CubeCoord __input = {n,0,0}; \
+        for(int d = 0; d < 3; d++){ \
+            coord_var = __input;\
+            {visit_code} \
+            __input = rotate_coord(__input);\
+        }\
     }}
 
 inline float square(float x){
@@ -31,8 +31,6 @@ struct CubeChangeInfo{
     VectorAttraction force_shift;
     QuantityInfo quantity_shift;
 };
-
-constexpr int SIDES_ON_CUBE = 6;
 
 void add_quantity(QuantityInfo * dest, QuantityInfo * src){
     dest->vec = mass(dest) + mass(src) < 1e-10f ?
@@ -107,9 +105,9 @@ CubeChangeInfo get_bordering_quantity_vel(QuantityInfo current, QuantityInfo oth
     float basic_liquid_amt = max(0.0f,dot_prod(cube_direction,total_liquid_motion));
     float basic_solid_amt = max(0.0f,dot_prod(cube_direction,total_solid_motion));
 
-    float amt_air_given = min(basic_air_amt * current.air_mass * seconds_per_calc, current.air_mass/(0.01f+SIDES_ON_CUBE));
-    float amt_liquid_given = min(basic_liquid_amt * current.liquid_mass * seconds_per_calc,current.liquid_mass/(0.01f+SIDES_ON_CUBE));
-    float amt_solid_given = min(basic_solid_amt * current.solid_mass * seconds_per_calc,current.solid_mass/(0.01f+SIDES_ON_CUBE));
+        float amt_air_given = min(basic_air_amt * current.air_mass * seconds_per_calc, current.air_mass*(1.0f/(0.01f+SIDES_ON_CUBE)));
+        float amt_liquid_given = min(basic_liquid_amt * current.liquid_mass * seconds_per_calc,current.liquid_mass*(1.0f/(0.01f+SIDES_ON_CUBE)));
+        float amt_solid_given = min(basic_solid_amt * current.solid_mass * seconds_per_calc,current.solid_mass*(1.0f/(0.01f+SIDES_ON_CUBE)));
 
     /*
     QuantityInfo air_transfer_quantity = {amt_air_given,0,0, total_air_motion};
