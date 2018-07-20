@@ -151,8 +151,10 @@ CubeChangeInfo get_bordering_quantity_vel(QuantityInfo current, QuantityInfo oth
         liquid attraction: liquids have an additional parameter, attraction, which defines a force pulling different cubes together.
                            I tried making internal attraction, but this seems to be better simulated by having a lower pressure constant than the other techniques I tried.
     */
-    float liquid_attraction_force = attraction_force_coef * surface_area(current.liquid_mass) * surface_area(other_cube.liquid_mass);
-    Vec3F liquid_attraction_vector = -liquid_attraction_force * cube_direction;
+    float liquid_attraction_force = liquid_attraction_force_coef * surface_area(current.liquid_mass) * surface_area(other_cube.liquid_mass);
+    float solid_attraction_force = solid_attraction_force_coef * surface_area(current.solid_mass) * surface_area(other_cube.solid_mass);
+    float total_attraction_force = liquid_attraction_force + solid_attraction_force;
+    Vec3F attraction_vector = -total_attraction_force * cube_direction;
 
     float air_pressure = gass_pressure_coef*current.air_mass;
     float liquid_pressure = liquid_pressure_coef*current.liquid_mass;
@@ -191,7 +193,7 @@ CubeChangeInfo get_bordering_quantity_vel(QuantityInfo current, QuantityInfo oth
 
     QuantityInfo final_quantity = {amt_air_given,amt_liquid_given,amt_solid_given,0,final_vec};
 
-    VectorAttraction attract_info = {liquid_attraction_vector};
+    VectorAttraction attract_info = {attraction_vector};
     CubeChangeInfo change_info = {attract_info,final_quantity};
     return change_info;
 }

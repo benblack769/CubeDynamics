@@ -103,14 +103,14 @@ void cell_update_main_loop(){
             cout << "frames per second = " << num_cube_updates / duration_since_render << endl;
             num_cube_updates = 0;
         }
-        if(true || cell_automata_update_count.should_render()){
+        if(cell_automata_update_count.should_render()){
             cell_automata_update_count.rendered();
             update_quant_kern.run();
             all_quant_buf.copy_buffer(update_quant_buf);
 
             ++num_cube_updates;
         }
-        if(false && !cube_update_count.should_render() &&
+        if(!cube_update_count.should_render() &&
                 !cell_automata_update_count.should_render() &&
                 !update_speed_output_count.should_render()){
             cell_automata_update_count.spin_sleep();
