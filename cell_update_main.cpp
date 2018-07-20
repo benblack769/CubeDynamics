@@ -27,15 +27,7 @@ void cell_update_main_loop(){
     QuantityInfo * all_cubes = all_cubes_vec.data();
     QuantityInfo * update_tmp = update_tmp_vec.data();
 
-    vector<float> all_bonds_vec = create_bond_vec(all_cubes);
-    vector<float> update_tmp_bonds_vec = all_bonds_vec;
-    vector<float> exchange_vec = create_exchange_vec();
-    float * all_bonds = all_bonds_vec.data();
-    float * update_tmp_bonds = update_tmp_bonds_vec.data();
-    float * exchange = exchange_vec.data();
-
     while(true){
-        cout << "arg!" << endl;
         if(update_speed_output_count.should_render()){
             double duration_since_render = update_speed_output_count.duration_since_render();
             update_speed_output_count.rendered();
@@ -46,15 +38,10 @@ void cell_update_main_loop(){
             cell_automata_update_count.rendered();
 
             visit_all_coords([&](CubeCoord base_coord){
-                update_coord_quantity(all_cubes,all_bonds,update_tmp,exchange,base_coord);
-            });
-            visit_all_coords([&](CubeCoord base_coord){
-                update_bonds(all_cubes,update_tmp,all_bonds,exchange,update_tmp_bonds,base_coord);
+                update_coord_quantity(all_cubes,update_tmp,base_coord);
             });
 
             swap(update_tmp,all_cubes);
-            swap(all_bonds,update_tmp_bonds);
-            cout << "max bond str: " << *max_element(all_bonds_vec.begin(),all_bonds_vec.end()) << endl;
             ++num_cube_updates;
         }
         if(cube_update_count.should_render()){

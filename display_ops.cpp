@@ -65,8 +65,8 @@ bool is_transparent(QuantityInfo info){
 QuantityInfo random_init(){
     QuantityInfo data;
     data.air_mass = 0*rand() / float(RAND_MAX);
-    data.liquid_mass = 0*rand() / float(RAND_MAX);
-    data.solid_mass = 0.01*rand() / float(RAND_MAX);
+    data.liquid_mass = 20*rand() / float(RAND_MAX);
+    data.solid_mass = 0*rand() / float(RAND_MAX);
     data.vec = zero_vec();
     return data;
 }
@@ -77,36 +77,18 @@ void init_quantity_data(QuantityInfo * data){
     visit_all_coords([&](CubeCoord c){
         *get(data,c) = random_init();
     });
-    visit_all_coords_between(CubeCoord{2,2,2},CubeCoord{15,15,15},[&](CubeCoord coord){
+    /*visit_all_coords_between(CubeCoord{2,2,2},CubeCoord{15,15,15},[&](CubeCoord coord){
         get(data,coord)->solid_mass = solid_mass_start_val + rand()/float(RAND_MAX);
     });
     visit_all_coords_between(CubeCoord{17,4,4},CubeCoord{19,6,6},[&](CubeCoord coord){
         get(data,coord)->solid_mass = solid_mass_start_val + rand()/float(RAND_MAX);
         //get(data,coord)->vec = build_vec(-1000,0,0);
-    });
+    });*/
 }
 std::vector<QuantityInfo> create_quantity_data_vec(){
     std::vector<QuantityInfo> quant_vec(data_size());
     init_quantity_data(quant_vec.data());
     return quant_vec;
-}
-std::vector<float> create_exchange_vec(){
-    return std::vector<float>(data_size() * EXCHANGE_LEN);
-}
-std::vector<float> create_bond_vec(QuantityInfo * quantities){
-    std::vector<float> res(data_size() * NUM_BONDS_PER_CUBE);
-
-    visit_all_coords([&](CubeCoord coord){
-        visit_all_coords_1_box([&](CubeCoord offset){
-            CubeCoord new_coord = add_coord(coord, offset);
-            float bond_strength = bond_strength_coef *
-                    (get(quantities,coord)->solid_mass *
-                    get(quantities,new_coord)->solid_mass /
-                    (square(solid_mass_start_val)));
-            *get_bond(res.data(),coord,offset) = bond_strength;
-        });
-    });
-    return res;
 }
 std::vector<FaceDrawInfo> get_exposed_faces(QuantityInfo * all_data){
     std::vector<FaceDrawInfo> info;

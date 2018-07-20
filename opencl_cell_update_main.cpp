@@ -65,7 +65,6 @@ void concat_files(string outfilename,string filename1, string filename2){
 void cell_update_main_loop(){
     int all_cube_size = data_size();
     vector<QuantityInfo> quant_cpu_buf = create_quantity_data_vec();
-    vector<float> bonds_cpu_buf = create_bond_vec(quant_cpu_buf.data());
 
     cube_shared_data.write(quant_cpu_buf);
 
@@ -77,20 +76,10 @@ void cell_update_main_loop(){
     CLBuffer<QuantityInfo> all_quant_buf = executor.new_clbuffer<QuantityInfo>(all_cube_size);
     CLBuffer<QuantityInfo> update_quant_buf = executor.new_clbuffer<QuantityInfo>(all_cube_size);
 
-    CLBuffer<float> all_bonds_buf = executor.new_clbuffer<float>(all_cube_size*NUM_BONDS_PER_CUBE);
-    CLBuffer<float> update_bonds_buf = executor.new_clbuffer<float>(all_cube_size*NUM_BONDS_PER_CUBE);
-
-    CLBuffer<float> exchange_buf = executor.new_clbuffer<float>(all_cube_size*EXCHANGE_LEN);
-
     CLKernel update_quant_kern = executor.new_clkernel(
                 "update_coord_quantity",
                 CL_NDRange(size_cube,size_cube,size_cube),
-                {all_quant_buf.k_arg(),all_bonds_buf.k_arg(),update_quant_buf.k_arg(),exchange_buf.k_arg()});
-
-    CLKernel update_bond_kern = executor.new_clkernel(
-                "update_bonds",
-                CL_NDRange(size_cube,size_cube,size_cube),
-                {all_quant_buf.k_arg(),update_quant_buf.k_arg(),all_bonds_buf.k_arg(),exchange_buf.k_arg(),update_bonds_buf.k_arg()});
+                {all_quant_buf.k_arg(),update_quant_buf.k_arg()});
 
     FrameRateControl cell_automata_update_count(1000.0);
     FrameRateControl update_speed_output_count(1.0);
@@ -98,9 +87,6 @@ void cell_update_main_loop(){
 
     all_quant_buf.write_buffer(quant_cpu_buf);
     update_quant_buf.write_buffer(quant_cpu_buf);
-
-    all_bonds_buf.write_buffer(bonds_cpu_buf);
-    update_bonds_buf.write_buffer(bonds_cpu_buf);
 
     int num_cube_updates = 0;
 
@@ -117,19 +103,14 @@ void cell_update_main_loop(){
             cout << "frames per second = " << num_cube_updates / duration_since_render << endl;
             num_cube_updates = 0;
         }
-        if(cell_automata_update_count.should_render()){
+        if(true || cell_automata_update_count.should_render()){
             cell_automata_update_count.rendered();
             update_quant_kern.run();
-            update_bond_kern.run();
             all_quant_buf.copy_buffer(update_quant_buf);
-            all_bonds_buf.copy_buffer(update_bonds_buf);
-
-            all_bonds_buf.read_buffer(bonds_cpu_buf);
-            cout << "max bond str: " << *max_element(bonds_cpu_buf.begin(),bonds_cpu_buf.end()) << endl;
 
             ++num_cube_updates;
         }
-        if(!cube_update_count.should_render() &&
+        if(false && !cube_update_count.should_render() &&
                 !cell_automata_update_count.should_render() &&
                 !update_speed_output_count.should_render()){
             cell_automata_update_count.spin_sleep();

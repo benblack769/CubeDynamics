@@ -10,5 +10,3 @@ bool is_transparent(QuantityInfo info);
 std::vector<FaceDrawInfo> get_exposed_faces(QuantityInfo * all_data);
 void update(QuantityInfo *source_data, QuantityInfo * update_data);
 std::vector<QuantityInfo> create_quantity_data_vec();
-std::vector<float> create_exchange_vec();
-std::vector<float> create_bond_vec(QuantityInfo * quantities);

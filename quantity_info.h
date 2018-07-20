@@ -37,15 +37,3 @@ inline bool is_valid_cube(CubeCoord c){
 inline float mass(const QuantityInfo * info){
     return info->air_mass + info->liquid_mass + info->solid_mass;
 }
-
-inline int bond_coord_offset(CubeCoord o){
-    //assert(is_valid_bond(o));
-    return ((o.x+1) * 3 + (o.y+1)) * 3 + (o.z + 1);
-}
-inline float * get_coord_bond_block_start(float * bond_data, CubeCoord c){
-    return bond_data + c_idx(c) * NUM_BONDS_PER_CUBE;
-}
-inline float * get_bond(float * bond_data,CubeCoord coord, CubeCoord dir){
-    int offset = bond_coord_offset(dir);
-    return get_coord_bond_block_start(bond_data,coord) + offset;
-}
