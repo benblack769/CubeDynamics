@@ -194,11 +194,13 @@ protected:
     cl_program program;
     cl_kernel kern;
     CL_NDRange run_range;
+    CL_NDRange work_group_range;
 public:
-    CLKernel(cl_program in_prog,cl_command_queue in_queue,const char * kern_name,CL_NDRange in_run_range,std::vector<cl_mem> args){
+    CLKernel(cl_program in_prog,cl_command_queue in_queue,const char * kern_name,CL_NDRange in_run_range,CL_NDRange in_work_group_range,std::vector<cl_mem> args){
         myqueue = in_queue;
         program = in_prog;
         run_range = in_run_range;
+        work_group_range = in_work_group_range;
 
         assert(run_range.dim() > 0 && "run_range needs to have at least 1 dimention specified");
 
@@ -216,13 +218,14 @@ public:
     }
     void run(){
         CheckError(CLEnqueueBarrier(myqueue));
+        size_t * work_group_ptr = work_group_range.dim() == 0 ? NULL : work_group_range.array_view();
         CheckError(clEnqueueNDRangeKernel(
                        myqueue,
                        kern,
                        run_range.dim(),
                        nullptr,
                        run_range.array_view(),
-                       nullptr,
+                       work_group_ptr,
                        0,nullptr,
                        nullptr
                        ));
@@ -255,8 +258,8 @@ public:
     CLBuffer<item_ty> new_clbuffer(size_t size){
         return CLBuffer<item_ty>(context,queue,size);
     }
-    CLKernel new_clkernel(const char * kern_name,CL_NDRange run_range,std::vector<cl_mem> buflist){
-        return CLKernel(program,queue,kern_name,run_range,buflist);
+    CLKernel new_clkernel(const char * kern_name,CL_NDRange run_range,CL_NDRange work_range,std::vector<cl_mem> buflist){
+        return CLKernel(program,queue,kern_name,run_range,work_range,buflist);
     }
 
 protected:
