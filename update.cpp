@@ -201,7 +201,7 @@ void update_coord_quantity(QuantityInfo * source_data, QuantityInfo * update_dat
 
     CubeCoord offset;
 
-    Vec3F total_accel_val = zero_vec();
+    Vec3F total_force_val = zero_vec();
 
     visit_all_adjacent_(offset,{
         Vec3F cube_dir = coord_to_vec(offset);
@@ -214,8 +214,7 @@ void update_coord_quantity(QuantityInfo * source_data, QuantityInfo * update_dat
         if(is_valid_cube(adj_coord)){
             CubeChangeInfo adj_change_info = get_bordering_quantity_vel(adj_orig_quanity,base_orig_quanity,-cube_dir);
 
-            total_accel_val += (seconds_per_calc / (0.0001f+mass(&base_orig_quanity))) *
-                    ( - change_info.force_shift.force_vec + adj_change_info.force_shift.force_vec);
+            total_force_val += ( - change_info.force_shift.force_vec + adj_change_info.force_shift.force_vec);
 
             add_quantity(&total_quanity,&adj_change_info.quantity_shift,offset);
             subtract_quantity(&total_quanity,&add_vec,offset);
@@ -231,6 +230,7 @@ void update_coord_quantity(QuantityInfo * source_data, QuantityInfo * update_dat
         }
     });
 
+    Vec3F total_accel_val = total_force_val * (seconds_per_calc / (0.0001f+mass(&base_orig_quanity)));
     total_quanity.vec += total_accel_val + global_gravity_vector;
     *get(update_data,base_coord) = total_quanity;
 }

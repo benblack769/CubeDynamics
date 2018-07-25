@@ -16,7 +16,55 @@ void visit_all_coords(visit_fn_ty visit_fn){
     }
 }
 
+class CubeSharedData{
+private:
+    vector<QuantityInfo> cube_data;
+    mutex lock;
+public:
+    CubeSharedData(size_t size):
+        cube_data(size){
+    }
+    void read_into(vector<QuantityInfo> & cube_buffer){
+        lock.lock();
+        assert(cube_buffer.size() == cube_data.size());
+        copy(cube_data.begin(),cube_data.end(),cube_buffer.begin());
+        lock.unlock();
+    }
+    void write(vector<QuantityInfo> & buffer){
+        lock.lock();
+        assert(buffer.size() == cube_data.size());
+        copy(buffer.begin(),buffer.end(),cube_data.begin());
+        lock.unlock();
+    }
+} cube_shared_data(data_size());
+
+void cell_triagulize_main_loop(){
+    FrameRateControl cube_update_count(10.0);
+
+    vector<QuantityInfo> cube_buf = create_quantity_data_vec();
+    while(true){
+        if(cube_update_count.should_render()){
+            cube_update_count.rendered();
+            cube_shared_data.read_into(cube_buf);
+            vector<FaceDrawInfo> draw_info = get_exposed_faces(cube_buf.data());
+            vector<BYTE> cube_colors;
+            cout << get(cube_buf.data(),CubeCoord{3,1,7})->liquid_mass << endl;
+            vector<float> cube_verticies;
+            for(FaceDrawInfo & info : draw_info){
+                info.add_to_buffer(cube_colors,cube_verticies);
+            }
+            all_buffer_data.set_vals(cube_colors,cube_verticies);
+        }
+        if(!cube_update_count.should_render()){
+            cube_update_count.spin_sleep();
+        }
+    }
+}
+
 void cell_update_main_loop(){
+    std::thread renderize_thread(cell_triagulize_main_loop);
+    renderize_thread.detach();
+    
     FrameRateControl cell_automata_update_count(1000.0);
     FrameRateControl update_speed_output_count(1.0);
     FrameRateControl cube_update_count(20.0);
@@ -34,7 +82,7 @@ void cell_update_main_loop(){
             cout << "frames per second = " << num_cube_updates / duration_since_render << endl;
             num_cube_updates = 0;
         }
-        if(cell_automata_update_count.should_render()){
+        if(true || cell_automata_update_count.should_render()){
             cell_automata_update_count.rendered();
 
             visit_all_coords([&](CubeCoord base_coord){
@@ -46,13 +94,7 @@ void cell_update_main_loop(){
         }
         if(cube_update_count.should_render()){
             cube_update_count.rendered();
-            vector<FaceDrawInfo> draw_info = get_exposed_faces(all_cubes);
-            vector<BYTE> cube_colors;
-            vector<float> cube_verticies;
-            for(FaceDrawInfo & info : draw_info){
-                info.add_to_buffer(cube_colors,cube_verticies);
-            }
-            all_buffer_data.set_vals(cube_colors,cube_verticies);
+            cube_shared_data.write(all_cubes_vec);
         }
         if(!cube_update_count.should_render() &&
                 !cell_automata_update_count.should_render() &&
