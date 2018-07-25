@@ -79,7 +79,7 @@ void cell_update_main_loop(){
     CLKernel update_quant_kern = executor.new_clkernel(
                 "update_coord_quantity",
                 CL_NDRange(size_cube,size_cube,size_cube),
-                CL_NDRange(4,8,8),
+                CL_NDRange(),
                 {all_quant_buf.k_arg(),update_quant_buf.k_arg()});
 
     FrameRateControl cell_automata_update_count(1000.0);

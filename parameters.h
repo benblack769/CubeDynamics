@@ -9,7 +9,7 @@
 
 #define directional_solid_pressure 0.5f
 //cube size, feel free to change
-#define size_cube 128
+#define size_cube 45
 
 
 //programatic constants, do not change ever
