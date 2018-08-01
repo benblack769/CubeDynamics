@@ -1,9 +1,9 @@
 #pragma once
 #include "cube_color.h"
+#include "cross_platform_vector.h"
 #include <vector>
 #include <cassert>
 #include <iostream>
-#include "cross_platform_vector.h"
 
 inline std::ostream & operator << (std::ostream & os, CubeCoord v){
     return os << v.x << "  " << v.y << "  " << v.z;

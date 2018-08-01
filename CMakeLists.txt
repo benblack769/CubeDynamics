@@ -1,5 +1,9 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 #include(ExternalProject)
+
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
 
 #ExternalProject_Add(glew_lib PREFIX ${CMAKE_SOURCE_DIR} GIT_REPOSITORY "https://github.com/glfw/glfw")
 
@@ -18,15 +22,19 @@ include_directories(external/opencl-2.2)
 
 
 add_executable(cl_prac
-    opencl_cell_update_main.cpp
+       cell_update_main.cpp
        cube_coords.cpp
        display_ops.cpp
        update.cpp
+       update_all.cpp
+       triangularize.cpp
+       opencl_executor.cpp
 )
 target_link_libraries(cl_prac PRIVATE
     "C:/Windows/System32/OpenCL.dll"
 )
 
+add_definitions(-DRUN_NO_GRAPHICS)
 #add_executable(draw_squares
  #   main.cpp
  #   cube_coords.cpp

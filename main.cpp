@@ -28,7 +28,7 @@ using namespace std;
 #include <string.h>
 #include <chrono>
 #include <ctime>
-#include "cell_update_main.h"
+#include "framerate_control.h"
 
 constexpr int X_WIN_SIZE = 1024;
 constexpr int Y_WIN_SIZE = 768;
@@ -123,9 +123,14 @@ void move_cursor(CameraPosition & camera_pos){
 int main( void )
 {
     srand(clock());
+    RenderBufferData buffer_data;
+    CubeSharedData cube_data(data_size());
 
-    std::thread cell_loop_thread(cell_update_main_loop);
-    cell_loop_thread.detach();
+    std::thread renderize_thread(triangularize_continuously,&cube_data,&buffer_data);
+    renderize_thread.detach();
+
+    std::thread update_continuously_thread(update_data_continuously,&cube_data);
+    update_continuously_thread.detach();
 
     setup_window();
     //glDepthFunc(GL_LESS);
