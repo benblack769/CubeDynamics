@@ -29,6 +29,7 @@ struct FaceInfo{
     CubeCoord cube_facing();
     void buffer_verticies(std::vector<float> & vertex_buffer);
 };
+
 struct FaceDrawInfo{
     RGBVal color;
     FaceInfo face;

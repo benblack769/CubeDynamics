@@ -189,7 +189,7 @@ Vec3F pow3v(Vec3F x){
 }
 
 float surface_area(float quantity){
-    return powf(quantity,1.0f/3.0f);//TODO: check effect of turning this to 2/3, like surface area is supposed to be.
+    return powr(quantity,1.0f/3.0f);//TODO: check effect of turning this to 2/3, like surface area is supposed to be.
 }
 
 
@@ -259,8 +259,19 @@ CubeChangeInfo get_bordering_quantity_vel(QuantityInfo current, QuantityInfo oth
     CubeChangeInfo change_info = {attract_info,final_quantity};
     return change_info;
 }
-float mass_conv(float m){
-    return powf(m,1.0f/3.0f);
+bool should_reflect(float cur_solid_mass, float next_solid_mass, float final_solid_mass){
+    float max_mass = max(cur_solid_mass,final_solid_mass);
+    float min_mass = min(cur_solid_mass,final_solid_mass);
+    return max_mass > min_reflect_mass &&
+           max_mass * gap_ratio_reflect > next_solid_mass &&
+           max_mass * reflect_max_ratio < min_mass; //doesn't reflect unless masses are both relatively large
+}
+Vec3F reflect_force(float amt_reflected,Vec3F change_vel){
+    return  (1.0f/seconds_per_calc) * amt_reflected * change_vel;
+}
+CubeCoord mul_offset(CubeCoord coord, int mul_by){
+    CubeCoord new_coord = {coord.x * mul_by, coord.y * mul_by, coord.z * mul_by};
+    return new_coord;
 }
 kernel void update_coord_quantity(global QuantityInfo * source_data, global QuantityInfo * update_data){
     CubeCoord base_coord = {
@@ -273,7 +284,8 @@ kernel void update_coord_quantity(global QuantityInfo * source_data, global Quan
     const QuantityInfo base_orig_quanity = *get(source_data,base_coord);
     QuantityInfo total_quanity = base_orig_quanity;
 
-    Vec3F total_accel_val = zero_vec();
+
+    Vec3F total_force_val = zero_vec();
 
     CubeCoord offset;
     visit_all_adjacent_(offset,{
@@ -287,13 +299,41 @@ kernel void update_coord_quantity(global QuantityInfo * source_data, global Quan
         if(is_valid_cube(adj_coord)){
             CubeChangeInfo adj_change_info = get_bordering_quantity_vel(adj_orig_quanity,base_orig_quanity,-cube_dir);
 
-            total_accel_val += (seconds_per_calc / (0.0001f+mass(&base_orig_quanity))) *
-                    ( - change_info.force_shift.force_vec + adj_change_info.force_shift.force_vec);
+            total_force_val += ( - change_info.force_shift.force_vec + adj_change_info.force_shift.force_vec);
 
-            add_quantity(&total_quanity,&adj_change_info.quantity_shift,offset);
+            //handles reflections of solids
+            CubeCoord twice_offset = mul_offset(offset,2);
+            CubeCoord two_away_coord = add_coord(base_coord,twice_offset);
+            if(is_valid_cube(two_away_coord)){
+                Vec3F cube_dir = coord_to_vec(offset);
+                QuantityInfo one_away_quanity = adj_orig_quanity;
+                QuantityInfo two_away_quanity = *get(source_data,two_away_coord);
+                if(should_reflect(base_orig_quanity.solid_mass,one_away_quanity.solid_mass,two_away_quanity.solid_mass)){
+
+                    //reflect other mass putting force on self
+                    CubeChangeInfo reflect_amount = get_bordering_quantity_vel(two_away_quanity,one_away_quanity,cube_dir);
+                    Vec3F change_vector = reflect_amount.quantity_shift.vec - reflect_vector_along(reflect_amount.quantity_shift.vec,cube_dir);
+                    change_vector *= 0.5f;
+                    total_force_val -= reflect_force(reflect_amount.quantity_shift.solid_mass,change_vector);
+
+                    //reflect current mass
+                    QuantityInfo reflected_vector = add_vec;
+                    reflected_vector.vec = reflect_vector_along(add_vec.vec,cube_dir);
+                    add_quantity(&total_quanity,&reflected_vector,offset);
+                }
+            }
+
+            CubeCoord neg_offset = mul_offset(offset,-1);
+            CubeCoord neg_coord = add_coord(base_coord,neg_offset);
+            QuantityInfo neg_quanity = *get(source_data,neg_coord);
+            if(!is_valid_cube(neg_coord) || !should_reflect(neg_quanity.solid_mass,base_orig_quanity.solid_mass,adj_orig_quanity.solid_mass)){
+                add_quantity(&total_quanity,&adj_change_info.quantity_shift,offset);
+            }
+
             subtract_quantity(&total_quanity,&add_vec,offset);
         }
         else{
+            //assert(change_info.force_shift.force_vec == Vec3F(0,0,0));
             //is border cube
             QuantityInfo reflected_vector = add_vec;
             reflected_vector.vec = reflect_vector_along(add_vec.vec,cube_dir);
@@ -302,6 +342,8 @@ kernel void update_coord_quantity(global QuantityInfo * source_data, global Quan
             subtract_quantity(&total_quanity,&add_vec,offset);
         }
     });
+
+    Vec3F total_accel_val = total_force_val * (seconds_per_calc / (0.0001f+mass(&base_orig_quanity)));
     total_quanity.vec += total_accel_val + global_gravity_vector;
     *get(update_data,base_coord) = total_quanity;
 }

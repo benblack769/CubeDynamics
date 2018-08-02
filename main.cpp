@@ -29,6 +29,8 @@ using namespace std;
 #include <chrono>
 #include <ctime>
 #include "framerate_control.h"
+#include "triangularize.h"
+#include "update_all.h"
 
 constexpr int X_WIN_SIZE = 1024;
 constexpr int Y_WIN_SIZE = 768;
@@ -123,10 +125,10 @@ void move_cursor(CameraPosition & camera_pos){
 int main( void )
 {
     srand(clock());
-    RenderBufferData buffer_data;
+    RenderBufferData all_buffer_data;
     CubeSharedData cube_data(data_size());
 
-    std::thread renderize_thread(triangularize_continuously,&cube_data,&buffer_data);
+    std::thread renderize_thread(triangularize_continuously,&cube_data,&all_buffer_data);
     renderize_thread.detach();
 
     std::thread update_continuously_thread(update_data_continuously,&cube_data);
