@@ -361,8 +361,13 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 
     return ProgramID;
 }
-
+void error_callback(int error, const char* description)
+{
+    std::cerr << "GLFW: (" << error << ") " << description << std::endl;
+}
 void setup_window(){
+    glfwSetErrorCallback(error_callback);
+
     // Initialise GLFW
     if( !glfwInit() )
     {

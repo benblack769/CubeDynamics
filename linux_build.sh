@@ -1,1 +1,1 @@
-g++ -O3 -pthread -DNO_GRAPHICS -o bin/mygl.exe -I "external/opencl-2.2" cube_coords.cpp update.cpp display_ops.cpp "/usr/lib64/libOpenCL.so.1" -lglfw -lGLEW -lGL
+g++ -O3 -std=c++11 -pthread -o bin/mygl.exe -I "external/opencl-2.2" main.cpp cube_coords.cpp update.cpp display_ops.cpp triangularize.cpp update_all.cpp opencl_executor.cpp  "/usr/lib/x86_64-linux-gnu/libOpenCL.so.1" -lglfw -lGLEW -lGL
