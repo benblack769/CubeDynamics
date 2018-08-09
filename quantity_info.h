@@ -9,6 +9,7 @@ struct QuantityInfo{
     float __no_use_padding;
     Vec3F vec;
     Vec3F solid_orientation;
+    LargeVec solid_splits;
 };
 
 inline int int_pow3(int x){

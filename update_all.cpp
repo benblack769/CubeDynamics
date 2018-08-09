@@ -54,7 +54,7 @@ void update_data_continuously_cpu(CubeSharedData & data_to_update){
             cell_automata_update_count.rendered();
 
             visit_all_coords([&](CubeCoord base_coord){
-                update_coord_quantity(all_cubes,update_tmp,base_coord);
+                update_coord_quantity(all_cubes,update_tmp,base_coord,num_cube_updates);
             });
 
             swap(update_tmp,all_cubes);

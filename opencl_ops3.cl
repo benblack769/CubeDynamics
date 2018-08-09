@@ -314,7 +314,7 @@ kernel void update_coord_quantity(global QuantityInfo * source_data, global Quan
                     CubeChangeInfo reflect_amount = get_bordering_quantity_vel(two_away_quanity,one_away_quanity,cube_dir);
                     Vec3F change_vector = reflect_amount.quantity_shift.vec - reflect_vector_along(reflect_amount.quantity_shift.vec,cube_dir);
                     change_vector *= 0.5f;
-                    total_force_val -= reflect_force(reflect_amount.quantity_shift.solid_mass,change_vector);
+                    total_force_val += reflect_force(reflect_amount.quantity_shift.solid_mass,change_vector);
 
                     //reflect current mass
                     QuantityInfo reflected_vector = add_vec;

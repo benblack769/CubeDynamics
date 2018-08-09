@@ -79,11 +79,12 @@ QuantityInfo random_solid(){
     val.solid_mass =  solid_mass_start_val + rand()/float(RAND_MAX);
     float ov = cuberoot(val.solid_mass);
     val.solid_orientation = build_vec(ov,ov,ov);
+    val.solid_splits = add_sca(zero_lv(),1);
     return val;
 }
 void init_quantity_data(QuantityInfo * data){
     for(int i = 0; i < data_size(); i++){
-        data[i] = QuantityInfo{0,0,0,0,zero_vec(),zero_vec()};
+        data[i] = QuantityInfo{0,0,0,0,zero_vec(),zero_vec(), zero_lv()};
     }
     visit_all_coords([&](CubeCoord c){
         *get(data,c) = random_init();
@@ -96,13 +97,13 @@ void init_quantity_data(QuantityInfo * data){
        *get(data,coord) = random_solid();
        get(data,coord)->vec = build_vec(100,0,0);
     });*/
-    visit_all_coords_between(CubeCoord{2,22,2},CubeCoord{25,35,25},[&](CubeCoord coord){
+    visit_all_coords_between(CubeCoord{2,2,2},CubeCoord{12,12,12},[&](CubeCoord coord){
         *get(data,coord) = random_solid();
-        get(data,coord)->vec = build_vec(100,0,0);
+        get(data,coord)->vec = build_vec(0,0,0);
     });
-    visit_all_coords_between(CubeCoord{35,22,2},CubeCoord{55,35,25},[&](CubeCoord coord){
+    visit_all_coords_between(CubeCoord{2,14,2},CubeCoord{16,24,16},[&](CubeCoord coord){
         *get(data,coord) = random_solid();
-        get(data,coord)->vec = build_vec(-100,0,0);
+        get(data,coord)->vec = build_vec(0,0,0);
     });
 }
 std::vector<QuantityInfo> create_quantity_data_vec(){
