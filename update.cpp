@@ -218,6 +218,7 @@ int offset_idx(CubeCoord offset){
 }
 LargeVec ballance_lv_splits(float mass, LargeVec cur_vals){
     LargeVec res = zero_floor(cur_vals);
+    res = add_sca(res,0.00001f);
     float tot_vals = sum_lv(res) + 0.00001f;
     imul_bv(&res,mass/tot_vals);
     return res;
@@ -278,8 +279,7 @@ void update_coord_quantity(QuantityInfo * source_data, QuantityInfo * update_dat
 
             subtract_quantity(&total_quanity,&add_vec,offset);
             LargeVec receive_lv = get_solid_distribution(base_orig_quanity.solid_splits,add_vec.solid_mass,rand_vec_idx(timestep,base_coord,offset_idx(offset)));
-            imul_bv(&receive_lv,-1.0f);
-            iadd_bv(&res_solid_dist,receive_lv);
+            isub_bv(&res_solid_dist,receive_lv);
                                 if(count % 10000 == 0){
                                     print_lv(res_solid_dist);
                                     print_lv(receive_lv);
@@ -300,6 +300,6 @@ void update_coord_quantity(QuantityInfo * source_data, QuantityInfo * update_dat
 
     Vec3F total_accel_val = total_force_val * (seconds_per_calc / (0.0001f+mass(&base_orig_quanity)));
     total_quanity.vec += total_accel_val + global_gravity_vector;
-    total_quanity.solid_splits = ballance_lv_splits(base_orig_quanity.solid_mass,res_solid_dist);
+    total_quanity.solid_splits = ballance_lv_splits(total_quanity.solid_mass,res_solid_dist);
     *get(update_data,base_coord) = total_quanity;
 }

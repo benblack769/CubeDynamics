@@ -95,6 +95,11 @@ inline void iadd_bv(LargeVec * dest,LargeVec src){
         dest->data[i] += src.data[i];
     }
 }
+inline void isub_bv(LargeVec * dest,LargeVec src){
+    for(int i = 0; i < LARGE_VEC_SIZE; i++){
+        dest->data[i] -= src.data[i];
+    }
+}
 inline LargeVec add_bv(LargeVec one,LargeVec other){
     for(int i = 0; i < LARGE_VEC_SIZE; i++){
         one.data[i] += other.data[i];
