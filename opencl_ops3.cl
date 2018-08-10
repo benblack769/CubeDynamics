@@ -8,24 +8,99 @@ struct CubeCoord_{
 #define CubeCoord struct CubeCoord_
 #define Vec3F float4
 
-inline CubeCoord add_coord(CubeCoord a,CubeCoord b){
+CubeCoord add_coord(CubeCoord a,CubeCoord b){
     CubeCoord coord = {a.x + b.x, a.y + b.y, a.z + b.z};
     return coord;
 }
-inline CubeCoord sub_coord(CubeCoord a,CubeCoord b){
+CubeCoord sub_coord(CubeCoord a,CubeCoord b){
     CubeCoord coord = {a.x - b.x, a.y - b.y, a.z - b.z};
     return coord;
 }
-inline float square(float x){
+float square(float x){
     return x * x;
 }
-inline int sqr(int x){
+int sqr(int x){
     return x * x;
 }
-inline int sqr_len(CubeCoord c){
+int sqr_len(CubeCoord c){
     return sqr(c.x) + sqr(c.y) + sqr(c.z);
 }
 
+struct LargeVec_{
+    float data[LARGE_VEC_SIZE];
+};
+#define LargeVec struct LargeVec_
+
+float sum_lv(LargeVec largevec){
+    float sum_val = 0.0f;
+    for(int i = 0; i < LARGE_VEC_SIZE; i++){
+        sum_val += largevec.data[i];
+    }
+    return sum_val;
+}
+LargeVec zero_floor(LargeVec vec){
+    for(int i = 0; i < LARGE_VEC_SIZE; i++){
+        vec.data[i] = max(0.0f, vec.data[i]);
+    }
+    return vec;
+}
+LargeVec zero_lv(){
+    LargeVec res;
+    for(int i = 0; i < LARGE_VEC_SIZE; i++){
+        res.data[i] = 0;
+    }
+    return res;
+}
+LargeVec create_idx(int idx, float val){
+    LargeVec res = zero_lv();
+    res.data[idx] = val;
+    return res;
+}
+void imul_bv(LargeVec * vec,float by){
+    for(int i = 0; i < LARGE_VEC_SIZE; i++){
+        vec->data[i] *= by;
+    }
+}
+void iadd_bv(LargeVec * dest,LargeVec src){
+    for(int i = 0; i < LARGE_VEC_SIZE; i++){
+        dest->data[i] += src.data[i];
+    }
+}
+void isub_bv(LargeVec * dest,LargeVec src){
+    for(int i = 0; i < LARGE_VEC_SIZE; i++){
+        dest->data[i] -= src.data[i];
+    }
+}
+LargeVec add_bv(LargeVec one,LargeVec other){
+    for(int i = 0; i < LARGE_VEC_SIZE; i++){
+        one.data[i] += other.data[i];
+    }
+    return one;
+}
+LargeVec add_sca(LargeVec one,float scal){
+    for(int i = 0; i < LARGE_VEC_SIZE; i++){
+        one.data[i] += scal;
+    }
+    return one;
+}
+LargeVec sqrt_lv(LargeVec lv){
+    for(int i = 0; i < LARGE_VEC_SIZE; i++){
+        lv.data[i] = sqrt(lv.data[i]);
+    }
+    return lv;
+}
+LargeVec mul_bv(LargeVec vec,float by){
+    for(int i = 0; i < LARGE_VEC_SIZE; i++){
+        vec.data[i] *= by;
+    }
+    return vec;
+}
+LargeVec mul_e_lv(LargeVec v1,LargeVec v2){
+    for(int i = 0; i < LARGE_VEC_SIZE; i++){
+        v1.data[i] *= v2.data[i];
+    }
+    return v1;
+}
 
 Vec3F zero_vec(){
     Vec3F zero = {0,0,0,0};
@@ -46,6 +121,7 @@ struct QuantityInfo_{
     float __no_use_padding;
     Vec3F vec;
     Vec3F solid_orientation;
+    LargeVec solid_splits;
 };
 #define QuantityInfo struct QuantityInfo_
 
@@ -90,18 +166,6 @@ CubeCoord rotate_coord(CubeCoord c){
             __input = rotate_coord(__input);\
         }\
     }}
-
-struct VectorAttraction_{
-    Vec3F force_vec;
-};
-#define VectorAttraction struct VectorAttraction_
-
-struct CubeChangeInfo_{
-    VectorAttraction force_shift;
-    QuantityInfo quantity_shift;
-};
-#define CubeChangeInfo struct CubeChangeInfo_
-
 
 Vec3F orient_add(Vec3F o1, float m1, Vec3F o2, float m2,CubeCoord dir){
     Vec3F o3;
@@ -193,7 +257,28 @@ float surface_area(float quantity){
 }
 
 
-CubeChangeInfo get_bordering_quantity_vel(QuantityInfo current, QuantityInfo other_cube,Vec3F cube_direction){
+float solid_attr_force(LargeVec solid_splits1, LargeVec solid_splits2){
+    return solid_attraction_force_coef * sum_lv(mul_e_lv(sqrt_lv(solid_splits1),sqrt_lv(solid_splits2)));
+}
+Vec3F get_force_transfer(QuantityInfo current, QuantityInfo other_cube,Vec3F cube_direction){
+    float liquid_attraction_force = liquid_attraction_force_coef * surface_area(current.liquid_mass) * surface_area(other_cube.liquid_mass);
+    float solid_attraction_force = solid_attr_force(current.solid_splits,other_cube.solid_splits);
+    //float solid_attraction_force = solid_attraction_force_coef * surface_area(current.solid_mass) * surface_area(other_cube.solid_mass);
+    float total_attr_force = liquid_attraction_force + solid_attraction_force;
+    Vec3F attraction_vector = -total_attr_force * cube_direction;
+    return attraction_vector;
+}
+
+LargeVec get_solid_distribution(LargeVec orig_dist, float solid_transfer_amt, int prefer_transfer_coord){
+    float pref_give_val = min(solid_transfer_amt,orig_dist.data[prefer_transfer_coord]);
+    float leftover_val = solid_transfer_amt - pref_give_val;
+    LargeVec leftover_vec = orig_dist;
+    leftover_vec.data[prefer_transfer_coord] = 0;
+    float leftover_perc = leftover_val / (0.00001f + sum_lv(leftover_vec));
+    LargeVec give_vec = add_bv(mul_bv(leftover_vec,leftover_perc), create_idx(prefer_transfer_coord,pref_give_val));
+    return give_vec;
+}
+QuantityInfo get_bordering_quantity_vel(QuantityInfo current, QuantityInfo other_cube,Vec3F cube_direction){
     /*
     params: cube_direction: the unit vector pointing from this to the "bordering" cube
             bordering: a cube that is adjacent to the current one
@@ -208,11 +293,6 @@ CubeChangeInfo get_bordering_quantity_vel(QuantityInfo current, QuantityInfo oth
         liquid attraction: liquids have an additional parameter, attraction, which defines a force pulling different cubes together.
                            I tried making internal attraction, but this seems to be better simulated by having a lower pressure constant than the other techniques I tried.
     */
-    float liquid_attraction_force = liquid_attraction_force_coef * surface_area(current.liquid_mass) * surface_area(other_cube.liquid_mass);
-    float solid_attraction_force = solid_attraction_force_coef * surface_area(current.solid_mass) * surface_area(other_cube.solid_mass);
-    float total_attr_force = liquid_attraction_force + solid_attraction_force;
-    Vec3F liquid_attraction_vector = -total_attr_force * cube_direction;
-
     float air_pressure = gass_pressure_coef*current.air_mass;
     float liquid_pressure = liquid_pressure_coef*current.liquid_mass;
     float solid_pressure = solid_pressure_coef*current.solid_mass;
@@ -253,11 +333,9 @@ CubeChangeInfo get_bordering_quantity_vel(QuantityInfo current, QuantityInfo oth
 
     float prop_solid_given = amt_solid_given / (0.0001f + current.solid_mass);
     Vec3F solid_orient = current.solid_orientation * (1.0f-fabs(cube_direction)*(1.0f-prop_solid_given));
+    //cout << to_string( (1.0f-fabs(cube_direction)*(1.0f-prop_solid_given))) << endl;
     QuantityInfo final_quantity = {amt_air_given,amt_liquid_given,amt_solid_given,0,final_vec,solid_orient};
-
-    VectorAttraction attract_info = {liquid_attraction_vector};
-    CubeChangeInfo change_info = {attract_info,final_quantity};
-    return change_info;
+    return final_quantity;
 }
 bool should_reflect(float cur_solid_mass, float next_solid_mass, float final_solid_mass){
     float max_mass = max(cur_solid_mass,final_solid_mass);
@@ -273,7 +351,26 @@ CubeCoord mul_offset(CubeCoord coord, int mul_by){
     CubeCoord new_coord = {coord.x * mul_by, coord.y * mul_by, coord.z * mul_by};
     return new_coord;
 }
-kernel void update_coord_quantity(global QuantityInfo * source_data, global QuantityInfo * update_data){
+int rand_vec_idx(int timestep, CubeCoord cur_coord, int offsetidx){
+    int val = (((timestep * 102647
+            + cur_coord.x) * 87811
+            + cur_coord.y * 96329)
+            + cur_coord.z * 82613) + offsetidx;
+    return val % LARGE_VEC_SIZE;
+}
+int offset_idx(CubeCoord offset){
+    return 3 + 3*offset.x + 2*offset.y + offset.z;
+}
+LargeVec ballance_lv_splits(float mass, LargeVec cur_vals){
+    LargeVec res = zero_floor(cur_vals);
+    res = add_sca(res,0.00001f);
+    float tot_vals = sum_lv(res) + 0.00001f;
+    imul_bv(&res,mass/tot_vals);
+    return res;
+}
+kernel
+void update_coord_quantity(global QuantityInfo * source_data, global QuantityInfo * update_data){
+    int timestep = 5;
     CubeCoord base_coord = {
         get_global_id(0),
         get_global_id(1),
@@ -284,37 +381,36 @@ kernel void update_coord_quantity(global QuantityInfo * source_data, global Quan
     const QuantityInfo base_orig_quanity = *get(source_data,base_coord);
     QuantityInfo total_quanity = base_orig_quanity;
 
-
     Vec3F total_force_val = zero_vec();
+    LargeVec res_solid_dist = base_orig_quanity.solid_splits;
 
     CubeCoord offset;
     visit_all_adjacent_(offset,{
         Vec3F cube_dir = coord_to_vec(offset);
         CubeCoord adj_coord = add_coord(base_coord,offset);
-        QuantityInfo adj_orig_quanity = *get(source_data,adj_coord);
-        CubeChangeInfo change_info = get_bordering_quantity_vel(base_orig_quanity,adj_orig_quanity,cube_dir);
-
-        QuantityInfo add_vec = change_info.quantity_shift;
+        const QuantityInfo adj_orig_quanity = *get(source_data,adj_coord);
+        QuantityInfo add_vec = get_bordering_quantity_vel(base_orig_quanity,adj_orig_quanity,cube_dir);
+        Vec3F force_orig_vec = get_force_transfer(base_orig_quanity,adj_orig_quanity,cube_dir);
 
         if(is_valid_cube(adj_coord)){
-            CubeChangeInfo adj_change_info = get_bordering_quantity_vel(adj_orig_quanity,base_orig_quanity,-cube_dir);
+            QuantityInfo adj_quant_shift = get_bordering_quantity_vel(adj_orig_quanity,base_orig_quanity,-cube_dir);
+            Vec3F force_adj_vec = get_force_transfer(adj_orig_quanity,base_orig_quanity,-cube_dir);
 
-            total_force_val += ( - change_info.force_shift.force_vec + adj_change_info.force_shift.force_vec);
+            total_force_val += ( - force_orig_vec + force_adj_vec);
 
             //handles reflections of solids
             CubeCoord twice_offset = mul_offset(offset,2);
             CubeCoord two_away_coord = add_coord(base_coord,twice_offset);
             if(is_valid_cube(two_away_coord)){
-                Vec3F cube_dir = coord_to_vec(offset);
                 QuantityInfo one_away_quanity = adj_orig_quanity;
                 QuantityInfo two_away_quanity = *get(source_data,two_away_coord);
                 if(should_reflect(base_orig_quanity.solid_mass,one_away_quanity.solid_mass,two_away_quanity.solid_mass)){
 
                     //reflect other mass putting force on self
-                    CubeChangeInfo reflect_amount = get_bordering_quantity_vel(two_away_quanity,one_away_quanity,cube_dir);
-                    Vec3F change_vector = reflect_amount.quantity_shift.vec - reflect_vector_along(reflect_amount.quantity_shift.vec,cube_dir);
+                    QuantityInfo reflect_amount = get_bordering_quantity_vel(two_away_quanity,one_away_quanity,cube_dir);
+                    Vec3F change_vector = reflect_amount.vec - reflect_vector_along(reflect_amount.vec,cube_dir);
                     change_vector *= 0.5f;
-                    total_force_val += reflect_force(reflect_amount.quantity_shift.solid_mass,change_vector);
+                    total_force_val -= reflect_force(reflect_amount.solid_mass,change_vector);
 
                     //reflect current mass
                     QuantityInfo reflected_vector = add_vec;
@@ -327,13 +423,16 @@ kernel void update_coord_quantity(global QuantityInfo * source_data, global Quan
             CubeCoord neg_coord = add_coord(base_coord,neg_offset);
             QuantityInfo neg_quanity = *get(source_data,neg_coord);
             if(!is_valid_cube(neg_coord) || !should_reflect(neg_quanity.solid_mass,base_orig_quanity.solid_mass,adj_orig_quanity.solid_mass)){
-                add_quantity(&total_quanity,&adj_change_info.quantity_shift,offset);
+                add_quantity(&total_quanity,&adj_quant_shift,offset);
+                LargeVec receive_lv = get_solid_distribution(adj_orig_quanity.solid_splits,adj_quant_shift.solid_mass,rand_vec_idx(timestep,adj_coord,offset_idx(neg_offset)));
+                iadd_bv(&res_solid_dist,receive_lv);
             }
 
             subtract_quantity(&total_quanity,&add_vec,offset);
+            LargeVec receive_lv = get_solid_distribution(base_orig_quanity.solid_splits,add_vec.solid_mass,rand_vec_idx(timestep,base_coord,offset_idx(offset)));
+            isub_bv(&res_solid_dist,receive_lv);
         }
         else{
-            //assert(change_info.force_shift.force_vec == Vec3F(0,0,0));
             //is border cube
             QuantityInfo reflected_vector = add_vec;
             reflected_vector.vec = reflect_vector_along(add_vec.vec,cube_dir);
@@ -345,5 +444,6 @@ kernel void update_coord_quantity(global QuantityInfo * source_data, global Quan
 
     Vec3F total_accel_val = total_force_val * (seconds_per_calc / (0.0001f+mass(&base_orig_quanity)));
     total_quanity.vec += total_accel_val + global_gravity_vector;
+    total_quanity.solid_splits = ballance_lv_splits(total_quanity.solid_mass,res_solid_dist);
     *get(update_data,base_coord) = total_quanity;
 }

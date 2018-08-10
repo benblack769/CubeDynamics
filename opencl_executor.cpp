@@ -201,7 +201,7 @@ void OpenCLExecutor::get_main_device(){
     std::cout << "Using device: "<< GetDeviceName (deviceIds [0])<<"\n";
 
     this->platform = platformIds [0];
-    this->device = deviceIds[0];
+    this->device = deviceIds[1];
 }
 void OpenCLExecutor::create_context(){
     // http://www.khronos.org/registry/cl/sdk/1.1/docs/man/xhtml/clCreateContext.html

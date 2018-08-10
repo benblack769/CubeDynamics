@@ -63,19 +63,11 @@ inline float sum_lv(LargeVec largevec){
     }
     return sum_val;
 }
-inline LargeVec rand_largevec(){
-    std::default_random_engine eng;
-    std::uniform_real_distribution<float> dist;
-    LargeVec res;
-    for(int i = 0; i < LARGE_VEC_SIZE; i++){
-        res.data[i] = dist(eng);
-    }
-    return res;
-}
 inline LargeVec zero_floor(LargeVec vec){
     for(int i = 0; i < LARGE_VEC_SIZE; i++){
         vec.data[i] = std::max(0.0f, vec.data[i]);
     }
+    return vec;
 }
 inline LargeVec zero_lv(){
     return LargeVec();
@@ -129,10 +121,6 @@ inline LargeVec mul_e_lv(LargeVec v1,LargeVec v2){
         v1.data[i] *= v2.data[i];
     }
     return v1;
-}
-inline void idiv_lv(LargeVec * vec,float by){
-    float byinv = 1.0f/(by+0.0000001f);
-    imul_bv(vec,byinv);
 }
 inline void print_lv(LargeVec lv){
     for(int i = 0; i < LARGE_VEC_SIZE; i++){
