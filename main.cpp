@@ -1,6 +1,7 @@
 // Include standard headers
 #include <stdio.h>
 #include <stdlib.h>
+#define GLM_ENABLE_EXPERIMENTAL
 #include <GL/glew.h>
 
 // Include GLEW
