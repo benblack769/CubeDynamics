@@ -18,6 +18,16 @@ void visit_all_coords(visit_fn_ty visit_fn){
     }
 }
 template<class visit_fn_ty>
+void visit_coords_around(CubeCoord start, CubeCoord end, visit_fn_ty visit_fn){
+    for(int i = start.x; i <= end.x; i++){
+        for(int j = start.y; j <= end.y; j++){
+            for(int k = start.z; k <= end.z; k++){
+                visit_fn(CubeCoord{i,j,k});
+            }
+        }
+    }
+}
+template<class visit_fn_ty>
 void visit_all_adjacent(visit_fn_ty visit_fn){
     for(int n = -1; n <= 1; n += 2){
         visit_fn(CubeCoord{n,0,0});
@@ -43,7 +53,7 @@ bool is_transparent(QuantityInfo info){
 QuantityInfo random_init(){
     QuantityInfo data;
     data.air_mass = 0*rand() / float(RAND_MAX);
-    data.liquid_mass = 20*rand() / float(RAND_MAX);
+    data.liquid_mass = 200*rand() / float(RAND_MAX);
     data.solid_mass = 0*rand() / float(RAND_MAX);
     data.vec = zero_vec();
     return data;
@@ -55,7 +65,10 @@ void init_data(QuantityInfo * data){
     for(int i = 0; i < data_size(); i++){
         data[i] = QuantityInfo{0,0,0,0,zero_vec()};
     }
-    visit_all_coords([&](CubeCoord c){
+    int size = size_cube/2;
+    int start = size_cube/4;
+    int end = (size_cube*3)/4;
+    visit_coords_around(CubeCoord{start,start,start},CubeCoord{end,end,end},[&](CubeCoord c){
         *get(data,c) = random_init();
     });
 }

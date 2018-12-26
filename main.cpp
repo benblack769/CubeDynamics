@@ -157,7 +157,7 @@ int main( void )
     // Model matrix : an identity matrix (model will be at the origin)
 	glm::mat4 Model      = glm::mat4(1.0f);
 
-    CameraPosition camera_pos(glm::vec3(50,20,-30),glm::vec3(-1,0,0));
+    CameraPosition camera_pos(glm::vec3(50,20,-20),glm::vec3(-1,0,0));
 
     GLuint vertexbuffer;
     glGenBuffers(1, &vertexbuffer);
