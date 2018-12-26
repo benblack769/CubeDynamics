@@ -1,4 +1,5 @@
-<video controls="controls">
-<source type="video/mp4" src="liquid.mp4"></source>
-<p>Your browser does not support the video element.</p>
-</video>
+
+
+You can watch the youtube video of its progress here.
+
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/fHrjmD4jiyo/0.jpg)](http://www.youtube.com/watch?v=fHrjmD4jiyo "Gif animation")
