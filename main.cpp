@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <GL/glew.h>
+#include <Windows.h>
+
 
 // Include GLEW
 
@@ -36,6 +38,7 @@ constexpr int Y_WIN_SIZE = 768;
 
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path);
 void setup_window();
+void save_frame();
 struct CameraPosition{
     glm::vec3 pos;
     glm::vec3 zdir;
@@ -229,6 +232,8 @@ int main( void )
 
             // Draw the triangle !
             glDrawArrays(GL_TRIANGLES, 0, current_cube_verticy_count/3); // 3 indices starting at 0 -> 1 triangle
+            glFlush();
+            save_frame();
 
             glDisableVertexAttribArray(vertexPosition_modelspaceID);
             glDisableVertexAttribArray(vertexColorID);
@@ -236,7 +241,6 @@ int main( void )
             // Swap buffers
             glfwSwapBuffers(window);
             glfwPollEvents();
-
         }
         vector<float> cube_verticies;
 
@@ -260,8 +264,58 @@ int main( void )
 
     return 0;
 }
+void save_frame_data(FILE *file);
+void save_buffer_header(FILE *file);
+int frame_count = 0;
+void save_frame(){
+    string fname = "frames/frame"+to_string(frame_count)+".bmp";
+    FILE * file = fopen(fname.c_str(), "w");
+    save_buffer_header(file);
+    save_frame_data(file);
+    fclose(file);
+    frame_count++;
+}
+void save_frame_data(FILE *file){
+    const int bufsize = X_WIN_SIZE*Y_WIN_SIZE*3;
+    vector<unsigned char> Buff(bufsize);
+    glReadBuffer(GL_FRONT);
+    glReadPixels(0, 0, X_WIN_SIZE, Y_WIN_SIZE, GL_RGB, GL_UNSIGNED_BYTE, Buff.data());
+    int cs = ((X_WIN_SIZE*Y_WIN_SIZE)/2)*3+X_WIN_SIZE*3;
+    for(int i = 0; i < X_WIN_SIZE*Y_WIN_SIZE; i++){
+        int o = i*3;
+        if(Buff[o+0] == 0 && Buff[o+1] == 0 && Buff[o+2] == 102){
+            Buff[o+0]=102;
+            Buff[o+2]=0;
+        }
+    }
 
+    fwrite(Buff.data(), ( 3 * X_WIN_SIZE * Y_WIN_SIZE ), 1, file);	/* write bmp pixels */
+}
+void save_buffer_header(FILE *file){
+    BITMAPFILEHEADER bitmapFileHeader;
+    BITMAPINFOHEADER bitmapInfoHeader;
 
+    bitmapFileHeader.bfType = 0x4D42;
+    bitmapFileHeader.bfSize = sizeof(BITMAPINFOHEADER) + sizeof(BITMAPFILEHEADER)+ X_WIN_SIZE*Y_WIN_SIZE * 3;
+    bitmapFileHeader.bfReserved1 = 0;
+    bitmapFileHeader.bfReserved2 = 0;
+    bitmapFileHeader.bfOffBits = sizeof(BITMAPINFOHEADER)+sizeof(BITMAPFILEHEADER);
+
+    bitmapInfoHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bitmapInfoHeader.biWidth = X_WIN_SIZE - 0;
+    bitmapInfoHeader.biHeight = Y_WIN_SIZE - 0;
+    bitmapInfoHeader.biPlanes = 1;
+    bitmapInfoHeader.biBitCount = 24;
+    bitmapInfoHeader.biCompression = BI_RGB;
+    bitmapInfoHeader.biSizeImage = 0;
+    bitmapInfoHeader.biXPelsPerMeter = 0; // ?
+    bitmapInfoHeader.biYPelsPerMeter = 0; // ?
+    bitmapInfoHeader.biClrUsed = 0;
+    bitmapInfoHeader.biClrImportant = 0;
+
+    fwrite(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, file);
+    fwrite(&bitmapInfoHeader, sizeof(BITMAPINFOHEADER), 1, file);
+}
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path){
 
     // Create the shaders

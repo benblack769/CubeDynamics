@@ -7,8 +7,11 @@
 #define gass_pressure_coef 10.0f
 #define gravity_constant 1000.0f
 
-#define size_cube 50
+#define size_cube 100
 
 
 //programatic constants, do not change without carefully examining code useage
 #define SIDES_ON_CUBE 6
+
+#define SIZE_FOLD 4
+#define NUM_FOLDS (size_cube/SIZE_FOLD)

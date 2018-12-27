@@ -66,6 +66,7 @@ void concat_files(string outfilename,string filename1, string filename2){
 }
 void cell_update_main_loop(){
     int all_cube_size = int_pow3(size_cube+2);
+    int all_fold_size = int_pow3(NUM_FOLDS+2);
     vector<QuantityInfo> cpu_buf = create_data_vec();
     cube_shared_data.write(cpu_buf);
 
@@ -76,7 +77,14 @@ void cell_update_main_loop(){
     OpenCLExecutor executor("full_cl.cl");
     CLBuffer<QuantityInfo> all_cubes_buf = executor.new_clbuffer<QuantityInfo>(all_cube_size);
     CLBuffer<QuantityInfo> update_buf = executor.new_clbuffer<QuantityInfo>(all_cube_size);
-    CLKernel update_kern = executor.new_clkernel("update_coords",CL_NDRange(size_cube,size_cube,size_cube),{all_cubes_buf.k_arg(),update_buf.k_arg()});
+    CLBuffer<bool> should_update_buf = executor.new_clbuffer<bool>(all_cube_size);
+    CLBuffer<bool> should_update_folds_buf = executor.new_clbuffer<bool>(all_fold_size);
+    CLBuffer<bool> should_update_folds_update_buf = executor.new_clbuffer<bool>(all_fold_size);
+    CLKernel update_kern = executor.new_clkernel("update_coords",CL_NDRange(size_cube,size_cube,size_cube),{all_cubes_buf.k_arg(),update_buf.k_arg(),should_update_folds_buf.k_arg()});
+    CLKernel calc_should_update_kern = executor.new_clkernel("calc_should_update",CL_NDRange(size_cube,size_cube,size_cube),{all_cubes_buf.k_arg(),should_update_buf.k_arg()});
+    CLKernel fold_should_update_kern = executor.new_clkernel("reduce_should_update",CL_NDRange(NUM_FOLDS,NUM_FOLDS,NUM_FOLDS),{should_update_buf.k_arg(),should_update_folds_buf.k_arg()});
+    CLKernel calc_should_update_large_kern = executor.new_clkernel("calc_should_update_large",CL_NDRange(NUM_FOLDS,NUM_FOLDS,NUM_FOLDS),{should_update_folds_buf.k_arg(),should_update_folds_update_buf.k_arg()});
+    CLKernel zero_fold_array_kern = executor.new_clkernel("zero_fold_array",CL_NDRange(all_fold_size),{should_update_folds_buf.k_arg()});
 
     FrameRateControl cell_automata_update_count(1000.0);
     FrameRateControl update_speed_output_count(1.0);
@@ -102,6 +110,14 @@ void cell_update_main_loop(){
         }
         if(cell_automata_update_count.should_render()){
             cell_automata_update_count.rendered();
+            if(num_cube_updates%SIZE_FOLD == 0){
+                calc_should_update_kern.run();
+                fold_should_update_kern.run();
+                calc_should_update_large_kern.run();
+                should_update_folds_buf.copy_buffer(should_update_folds_update_buf);
+                calc_should_update_large_kern.run();
+                should_update_folds_buf.copy_buffer(should_update_folds_update_buf);
+            }
             update_kern.run();
             all_cubes_buf.copy_buffer(update_buf);
             ++num_cube_updates;
@@ -109,7 +125,7 @@ void cell_update_main_loop(){
         if(!cube_update_count.should_render() &&
                 !cell_automata_update_count.should_render() &&
                 !update_speed_output_count.should_render()){
-            cell_automata_update_count.spin_sleep();
+            //cell_automata_update_count.spin_sleep();
         }
     }
 }
