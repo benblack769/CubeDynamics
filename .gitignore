@@ -1,3 +1,7 @@
 *.exe
 *.user
 full_cl.cl
+*.bmp
+*.png
+*.mp4
+tmp

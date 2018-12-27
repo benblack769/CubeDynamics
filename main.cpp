@@ -5,7 +5,6 @@
 #include <GL/glew.h>
 #include <Windows.h>
 
-
 // Include GLEW
 
 // Include GLFW
@@ -268,11 +267,15 @@ void save_frame_data(FILE *file);
 void save_buffer_header(FILE *file);
 int frame_count = 0;
 void save_frame(){
-    string fname = "frames/frame"+to_string(frame_count)+".bmp";
-    FILE * file = fopen(fname.c_str(), "w");
+    //string bmp_name = "tmp/frame.bmp";
+    string fcount = to_string(frame_count);
+    string zeros = string(6-fcount.size(),'0');
+    string bmp_name = "frames/frame"+zeros+fcount+".bmp";
+    FILE * file = fopen(bmp_name.c_str(), "w");
     save_buffer_header(file);
     save_frame_data(file);
     fclose(file);
+    //system((" C:/Windows/System32/bash.exe scripts/to_png.sh "+bmp_name+" "+png_name).c_str());
     frame_count++;
 }
 void save_frame_data(FILE *file){
