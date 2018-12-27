@@ -71,6 +71,16 @@ void init_data(QuantityInfo * data){
     visit_coords_around(CubeCoord{start,start,start},CubeCoord{end,end,end},[&](CubeCoord c){
         *get(data,c) = random_init();
     });
+    /*
+    visit_coords_around(CubeCoord{0,0,0},CubeCoord{99,20,99},[&](CubeCoord c){
+        *get(data,c) = random_init();
+        //get(data,c)->vec = build_vec(50,0,0);
+    });
+    visit_coords_around(CubeCoord{35,50,35},CubeCoord{60,75,60},[&](CubeCoord c){
+        *get(data,c) = random_init();
+        get(data,c)->vec = build_vec(0,-500,0);
+    });
+    */
 }
 std::vector<QuantityInfo> create_data_vec(){
     std::vector<QuantityInfo> quant_vec(data_size());

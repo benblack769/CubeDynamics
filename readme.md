@@ -6,6 +6,15 @@ You can watch a [youtube video](http://www.youtube.com/watch?v=RqMoEc-gecs) of i
 
 [![IMAGE ALT TEXT](http://img.youtube.com/vi/RqMoEc-gecs/0.jpg)](http://www.youtube.com/watch?v=RqMoEc-gecs "Gif animation")
 
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/-pC6vQY5TzY/0.jpg)](http://www.youtube.com/watch?v=-pC6vQY5TzY "Gif animation")
+
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/fHrjmD4jiyo/0.jpg)](http://www.youtube.com/watch?v=fHrjmD4jiyo "Gif animation")
+
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/-pC6vQY5TzY/0.jpg)](http://www.youtube.com/watch?v=-pC6vQY5TzY "Gif animation")
+
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/wDq-A0i26o0/0.jpg)](http://www.youtube.com/watch?v=wDq-A0i26o0 "Gif animation")
+
+
 ### Formula
 
 The system describes a cube with a fixed number of cubical cells inside it.
