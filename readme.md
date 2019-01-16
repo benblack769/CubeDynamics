@@ -14,6 +14,8 @@ You can watch a [youtube video](http://www.youtube.com/watch?v=RqMoEc-gecs) of i
 
 [![IMAGE ALT TEXT](http://img.youtube.com/vi/wDq-A0i26o0/0.jpg)](http://www.youtube.com/watch?v=wDq-A0i26o0 "Gif animation")
 
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/dSMJzG9Sqgo/0.jpg)](http://www.youtube.com/watch?v=dSMJzG9Sqgo "Gif animation")
+
 
 ### Formula
 

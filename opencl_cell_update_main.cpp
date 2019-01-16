@@ -23,25 +23,27 @@ public:
         cube_data(size){
     }
     void read_into(vector<QuantityInfo> & cube_buffer){
-        lock.lock();
+        //lock.lock();
         assert(cube_buffer.size() == cube_data.size());
+        //cube_data.swap(cube_buffer);
         copy(cube_data.begin(),cube_data.end(),cube_buffer.begin());
-        lock.unlock();
+        //lock.unlock();
     }
     void write(vector<QuantityInfo> & buffer){
-        lock.lock();
+        //lock.lock();
         assert(buffer.size() == cube_data.size());
+        //cube_data.swap(buffer);
         copy(buffer.begin(),buffer.end(),cube_data.begin());
-        lock.unlock();
+        //lock.unlock();
     }
 } cube_shared_data(int_pow3(size_cube+2));
 
 void cell_triagulize_main_loop(){
-    FrameRateControl cube_update_count(10.0);
+    FrameRateControl cube_update_count(50.0);
 
     vector<QuantityInfo> cube_buf = create_data_vec();
     while(true){
-        if(cube_update_count.should_render()){
+        if(true || cube_update_count.should_render()){
             cube_update_count.rendered();
             cube_shared_data.read_into(cube_buf);
             vector<FaceDrawInfo> draw_info = get_exposed_faces(cube_buf.data());
@@ -54,7 +56,7 @@ void cell_triagulize_main_loop(){
             all_buffer_data.set_vals(cube_colors,cube_verticies);
         }
         if(!cube_update_count.should_render()){
-            cube_update_count.spin_sleep();
+        //    cube_update_count.spin_sleep();
         }
     }
 }
@@ -80,7 +82,7 @@ void cell_update_main_loop(){
     CLBuffer<bool> should_update_buf = executor.new_clbuffer<bool>(all_cube_size);
     CLBuffer<bool> should_update_folds_buf = executor.new_clbuffer<bool>(all_fold_size);
     CLBuffer<bool> should_update_folds_update_buf = executor.new_clbuffer<bool>(all_fold_size);
-    CLKernel update_kern = executor.new_clkernel("update_coords",CL_NDRange(size_cube,size_cube,size_cube),{all_cubes_buf.k_arg(),update_buf.k_arg(),should_update_folds_buf.k_arg()});
+    CLKernel update_kern = executor.new_clkernel("update_coords",CL_NDRange(size_cube,size_cube,size_cube),{all_cubes_buf.k_arg(),update_buf.k_arg(),});
     CLKernel calc_should_update_kern = executor.new_clkernel("calc_should_update",CL_NDRange(size_cube,size_cube,size_cube),{all_cubes_buf.k_arg(),should_update_buf.k_arg()});
     CLKernel fold_should_update_kern = executor.new_clkernel("reduce_should_update",CL_NDRange(NUM_FOLDS,NUM_FOLDS,NUM_FOLDS),{should_update_buf.k_arg(),should_update_folds_buf.k_arg()});
     CLKernel calc_should_update_large_kern = executor.new_clkernel("calc_should_update_large",CL_NDRange(NUM_FOLDS,NUM_FOLDS,NUM_FOLDS),{should_update_folds_buf.k_arg(),should_update_folds_update_buf.k_arg()});
@@ -88,7 +90,7 @@ void cell_update_main_loop(){
 
     FrameRateControl cell_automata_update_count(1000.0);
     FrameRateControl update_speed_output_count(1.0);
-    FrameRateControl cube_update_count(20.0);
+    FrameRateControl cube_update_count(10.0);
 
     all_cubes_buf.write_buffer(cpu_buf);
     update_buf.write_buffer(cpu_buf);
@@ -110,14 +112,14 @@ void cell_update_main_loop(){
         }
         if(cell_automata_update_count.should_render()){
             cell_automata_update_count.rendered();
-            if(num_cube_updates%SIZE_FOLD == 0){
+            /*if(num_cube_updates%SIZE_FOLD == 0){
                 calc_should_update_kern.run();
                 fold_should_update_kern.run();
                 calc_should_update_large_kern.run();
                 should_update_folds_buf.copy_buffer(should_update_folds_update_buf);
                 calc_should_update_large_kern.run();
                 should_update_folds_buf.copy_buffer(should_update_folds_update_buf);
-            }
+            }*/
             update_kern.run();
             all_cubes_buf.copy_buffer(update_buf);
             ++num_cube_updates;

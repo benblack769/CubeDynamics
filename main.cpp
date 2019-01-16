@@ -76,8 +76,8 @@ void move_cursor(CameraPosition & camera_pos){
     static double lastTime = glfwGetTime();
     static bool cursor_locked = true;
 
-    float MouseSpeed = 10.0f;
-    float moveSpeed = 0.3;
+    float MouseSpeed = 20.0f;
+    float moveSpeed = 0.6;
 
     double currentTime = glfwGetTime();
     double time_delta = currentTime - lastTime;
@@ -174,19 +174,19 @@ int main( void )
         //sleeps when frame was recently rendered to prevent spinning
        // basic_frame_count.render_pause();
 
-        if(cube_update_count.should_render()){
-            cube_update_count.rendered();
+        //if(cube_update_count.should_render()){
+        //    cube_update_count.rendered();
 
-            all_buffer_data.update_check();
+            if(all_buffer_data.update_check()){
+                current_cube_verticy_count = all_buffer_data.get_verticies().size();
 
-            current_cube_verticy_count = all_buffer_data.get_verticies().size();
+                glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(float)*all_buffer_data.get_verticies().size(), all_buffer_data.get_verticies().data(), GL_DYNAMIC_DRAW);
 
-            glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(float)*all_buffer_data.get_verticies().size(), all_buffer_data.get_verticies().data(), GL_DYNAMIC_DRAW);
-
-            glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(BYTE)*all_buffer_data.get_colors().size(), all_buffer_data.get_colors().data(), GL_DYNAMIC_DRAW);
-        }
+                glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(BYTE)*all_buffer_data.get_colors().size(), all_buffer_data.get_colors().data(), GL_DYNAMIC_DRAW);
+            }
+        //}
         if(basic_frame_count.should_render()){
             basic_frame_count.rendered();
             move_cursor(camera_pos);

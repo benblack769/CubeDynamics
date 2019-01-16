@@ -76,10 +76,9 @@ public:
         return cube_verticies;
     }
     void set_vals(vector<BYTE> & colors,vector<float> & verticies){
-        if(has_written_lock.try_lock()){
-            has_written = false;
-            has_written_lock.unlock();
-        }
+        has_written_lock.lock();
+        has_written = false;
+        has_written_lock.unlock();
         write_cube_colors = colors;
         write_cube_verticies = verticies;
         has_written_lock.lock();

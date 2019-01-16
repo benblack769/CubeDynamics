@@ -112,6 +112,8 @@ float dot_prod(Vec3F v1,Vec3F v2){
     return sum;
 }
 Vec3F reflect_vector_along(Vec3F vector, Vec3F cube_dir){
+    //adds a little friction
+    vector *= 0.9f;
     //reflects the vector in opposite direction of the cube_dir
     float mag_incident = dot_prod(vector,cube_dir);
 
@@ -239,14 +241,14 @@ kernel void zero_fold_array(global bool * v){
 int base_fold_getidx(CubeCoord c){
     return (((c.x/SIZE_FOLD+1)*(NUM_FOLDS+1) + (c.y/SIZE_FOLD+1))*(NUM_FOLDS+1) + (c.z/SIZE_FOLD+1));
 }
-kernel void update_coords(global QuantityInfo * source_data, global QuantityInfo * update_data, global bool * should_update_fold){
+kernel void update_coords(global QuantityInfo * source_data, global QuantityInfo * update_data){
     int base_x = get_global_id(0);
     int base_y = get_global_id(1);
     int base_z = get_global_id(2);
     CubeCoord base_coord = {base_x,base_y,base_z};
-    if(!should_update_fold[base_fold_getidx(base_coord)]){
-        return;
-    }
+    //if(!should_update_fold[base_fold_getidx(base_coord)]){
+    //    return;
+    //}
     Vec3F global_gravity_vector = build_vec(0,-gravity_constant * seconds_per_calc,0);
 
     QuantityInfo base_orig_quanity = *get(source_data,base_coord);
