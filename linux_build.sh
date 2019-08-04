@@ -1,0 +1,1 @@
+g++ -O3 -std=c++11 -DCL_TARGET_OPENCL_VERSION=110 -Wno-deprecated-declarations -DOPENCL_ACCEL -pthread -o bin/mygl.exe -I "external/opencl-2.2" main.cpp opencl_cell_update_main.cpp cube_coords.cpp update.cpp display_ops.cpp   "/usr/lib/x86_64-linux-gnu/libOpenCL.so.1" -lglfw -lGLEW -lGL

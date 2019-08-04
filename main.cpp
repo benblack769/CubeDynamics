@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <GL/glew.h>
-#include <Windows.h>
 
 // Include GLEW
 
@@ -294,6 +293,32 @@ void save_frame_data(FILE *file){
 
     fwrite(Buff.data(), ( 3 * X_WIN_SIZE * Y_WIN_SIZE ), 1, file);	/* write bmp pixels */
 }
+using WORD=uint16_t;
+using DWORD=uint32_t;
+using LONG=uint32_t;
+#pragma pack(2)
+
+struct BITMAPFILEHEADER {
+  WORD bfType;
+  DWORD bfSize;
+  WORD bfReserved1;
+  WORD bfReserved2;
+  DWORD bfOffBits;
+};
+struct BITMAPINFOHEADER {
+  DWORD biSize;
+  LONG biWidth;
+  LONG biHeight;
+  WORD biPlanes;
+  WORD biBitCount;
+  DWORD biCompression;
+  DWORD biSizeImage;
+  LONG biXPelsPerMeter;
+  LONG biYPelsPerMeter;
+  DWORD biClrUsed;
+  DWORD biClrImportant;
+};
+constexpr LONG BI_RGB = 0;
 void save_buffer_header(FILE *file){
     BITMAPFILEHEADER bitmapFileHeader;
     BITMAPINFOHEADER bitmapInfoHeader;
