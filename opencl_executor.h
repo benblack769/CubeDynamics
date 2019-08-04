@@ -179,6 +179,8 @@ protected:
     cl_program program;
     cl_kernel kern;
     CL_NDRange run_range;
+    //CL_NDRange group_range;
+    //CL_NDRange exec_range;
 public:
     CLKernel(cl_program in_prog,cl_command_queue in_queue,const char * kern_name,CL_NDRange in_run_range,std::vector<cl_mem> args){
         myqueue = in_queue;

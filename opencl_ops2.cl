@@ -185,70 +185,11 @@ CubeChangeInfo get_bordering_quantity_vel(QuantityInfo current, QuantityInfo oth
     CubeChangeInfo res_info = {attract_info,final_quantity};
     return res_info;
 }
-bool is_negligable(float amnt){
-    return amnt < 0.01;
-}
-int fold_getidx(CubeCoord c){
-    return (((c.x+1)*(NUM_FOLDS+1) + (c.y+1))*(NUM_FOLDS+1) + (c.z+1));
-}
-bool val_should_update(global bool * source_data, CubeCoord base_coord){
-    bool neg_res = false;
-    if(source_data[fold_getidx(base_coord)]) {
-        neg_res = true;
-    }
-    CubeCoord offset;
-    visit_all_adjacent_(offset,{
-        CubeCoord adj_coord = add_coord(base_coord,offset);
-        if(source_data[fold_getidx(adj_coord)]) {
-            neg_res = true;
-        }
-    })
-    return neg_res;
-}
-kernel void calc_should_update(global QuantityInfo * source_data, global bool * should_update){
-    int base_x = get_global_id(0);
-    int base_y = get_global_id(1);
-    int base_z = get_global_id(2);
-    CubeCoord base_coord = {base_x,base_y,base_z};
-    should_update[getidx(base_coord)] = !is_negligable(gmass(get(source_data,base_coord)));
-}
-kernel void calc_should_update_large(global bool * should_update,global bool * should_update_update){
-    int base_x = get_global_id(0);
-    int base_y = get_global_id(1);
-    int base_z = get_global_id(2);
-    CubeCoord basecoord = {base_x,base_y,base_z};
-    should_update_update[fold_getidx(basecoord)] = val_should_update(should_update,basecoord);
-}
-kernel void reduce_should_update(global bool * should_update, global bool * should_update_fold){
-    int base_x = get_global_id(0);
-    int base_y = get_global_id(1);
-    int base_z = get_global_id(2);
-    CubeCoord basecoord = {base_x,base_y,base_z};
-    bool update = false;
-    for(int x = 0; x < SIZE_FOLD; x++){
-        for(int y = 0; y < SIZE_FOLD; y++){
-            for(int z = 0; z < SIZE_FOLD; z++){
-                CubeCoord coord = {base_x*SIZE_FOLD+x,base_y*SIZE_FOLD+y,base_z*SIZE_FOLD+z};
-                update |= should_update[getidx(coord)];
-            }
-        }
-    }
-    should_update_fold[fold_getidx(basecoord)] = update;
-}
-kernel void zero_fold_array(global bool * v){
-    v[get_global_id(0)] = 0;
-}
-int base_fold_getidx(CubeCoord c){
-    return (((c.x/SIZE_FOLD+1)*(NUM_FOLDS+1) + (c.y/SIZE_FOLD+1))*(NUM_FOLDS+1) + (c.z/SIZE_FOLD+1));
-}
 kernel void update_coords(global QuantityInfo * source_data, global QuantityInfo * update_data){
     int base_x = get_global_id(0);
     int base_y = get_global_id(1);
     int base_z = get_global_id(2);
     CubeCoord base_coord = {base_x,base_y,base_z};
-    //if(!should_update_fold[base_fold_getidx(base_coord)]){
-    //    return;
-    //}
     Vec3F global_gravity_vector = build_vec(0,-gravity_constant * seconds_per_calc,0);
 
     QuantityInfo base_orig_quanity = *get(source_data,base_coord);
