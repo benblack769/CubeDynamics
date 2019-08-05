@@ -30,6 +30,7 @@ using namespace std;
 #include <chrono>
 #include <ctime>
 #include "cell_update_main.h"
+#include "cube_coords.h"
 
 constexpr int X_WIN_SIZE = 1024;
 constexpr int Y_WIN_SIZE = 768;
@@ -37,6 +38,11 @@ constexpr int Y_WIN_SIZE = 768;
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path);
 void setup_window();
 void save_frame();
+std::ifstream::pos_type filesize(const char* filename)
+{
+    std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+    return in.tellg();
+}
 struct CameraPosition{
     glm::vec3 pos;
     glm::vec3 zdir;
@@ -125,9 +131,10 @@ void move_cursor(CameraPosition & camera_pos){
 int main( void )
 {
     srand(clock());
-
+#ifndef SAVE_TRIANGLES
     std::thread cell_loop_thread(cell_update_main_loop);
     cell_loop_thread.detach();
+#endif
 
     setup_window();
     //glDepthFunc(GL_LESS);
@@ -158,7 +165,7 @@ int main( void )
     // Model matrix : an identity matrix (model will be at the origin)
 	glm::mat4 Model      = glm::mat4(1.0f);
 
-    CameraPosition camera_pos(glm::vec3(50,20,-20),glm::vec3(-1,0,0));
+    CameraPosition camera_pos(glm::vec3(50,150,-20),glm::vec3(-1,0,0));
 
     GLuint vertexbuffer;
     glGenBuffers(1, &vertexbuffer);
@@ -167,15 +174,16 @@ int main( void )
     glGenBuffers(1, &colorbuffer);
 
     FrameRateControl basic_frame_count(30.0);
-    FrameRateControl cube_update_count(20.0);
+    FrameRateControl cube_update_count(5.0);
     int current_cube_verticy_count = 0;
+    int update_count = 0;
     do{
         //sleeps when frame was recently rendered to prevent spinning
        // basic_frame_count.render_pause();
 
         //if(cube_update_count.should_render()){
         //    cube_update_count.rendered();
-
+#ifndef SAVE_TRIANGLES
             if(all_buffer_data.update_check()){
                 current_cube_verticy_count = all_buffer_data.get_verticies().size();
 
@@ -185,6 +193,29 @@ int main( void )
                 glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
                 glBufferData(GL_ARRAY_BUFFER, sizeof(BYTE)*all_buffer_data.get_colors().size(), all_buffer_data.get_colors().data(), GL_DYNAMIC_DRAW);
             }
+#else
+            if(cube_update_count.should_render()){
+                update_count++;
+                std::cout << update_count << std::endl;
+                string faces_name = "triangles/faces"+to_string(update_count)+".vec";
+                std::vector<FaceDrawInfo> draw_info(filesize(faces_name.c_str())/sizeof(FaceDrawInfo));
+                ifstream face_file(faces_name,ios::binary);
+                face_file.read((char*)(draw_info.data()),draw_info.size()*sizeof(draw_info[0]));
+                vector<BYTE> cube_colors;
+                //cout << get(cube_buf.data(),CubeCoord{3,1,7})->liquid_mass << endl;
+                vector<float> cube_verticies;
+                for(FaceDrawInfo & info : draw_info){
+                    info.add_to_buffer(cube_colors,cube_verticies);
+                }
+                current_cube_verticy_count = cube_verticies.size();
+
+                glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(float)*cube_verticies.size(), cube_verticies.data(), GL_DYNAMIC_DRAW);
+
+                glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(BYTE)*cube_colors.size(), cube_colors.data(), GL_DYNAMIC_DRAW);
+            }
+#endif
         //}
         if(basic_frame_count.should_render()){
             basic_frame_count.rendered();
@@ -280,7 +311,7 @@ void save_frame(){
 void save_frame_data(FILE *file){
     const int bufsize = X_WIN_SIZE*Y_WIN_SIZE*3;
     vector<unsigned char> Buff(bufsize);
-    glReadBuffer(GL_FRONT);
+    glReadBuffer(GL_BACK);
     glReadPixels(0, 0, X_WIN_SIZE, Y_WIN_SIZE, GL_RGB, GL_UNSIGNED_BYTE, Buff.data());
     int cs = ((X_WIN_SIZE*Y_WIN_SIZE)/2)*3+X_WIN_SIZE*3;
     for(int i = 0; i < X_WIN_SIZE*Y_WIN_SIZE; i++){
@@ -296,8 +327,8 @@ void save_frame_data(FILE *file){
 using WORD=uint16_t;
 using DWORD=uint32_t;
 using LONG=uint32_t;
-#pragma pack(2)
 
+#pragma pack(2)
 struct BITMAPFILEHEADER {
   WORD bfType;
   DWORD bfSize;

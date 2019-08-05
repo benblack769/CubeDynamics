@@ -3,6 +3,7 @@
 #include <iostream>
 #include <mutex>
 #include <thread>
+#include <string>
 
 #include "cell_update_main.h"
 #include "update.h"
@@ -39,14 +40,16 @@ public:
 } cube_shared_data(int_pow3(size_cube+2));
 
 void cell_triagulize_main_loop(){
-    FrameRateControl cube_update_count(50.0);
+    FrameRateControl cube_update_count(60.0);
 
     vector<QuantityInfo> cube_buf = create_data_vec();
+    int tri_idx = 0;
     while(true){
-        if(true || cube_update_count.should_render()){
+        if(cube_update_count.should_render()){
             cube_update_count.rendered();
             cube_shared_data.read_into(cube_buf);
             vector<FaceDrawInfo> draw_info = get_exposed_faces(cube_buf.data());
+#ifndef SAVE_TRIANGLES
             vector<BYTE> cube_colors;
             cout << get(cube_buf.data(),CubeCoord{3,1,7})->liquid_mass << endl;
             vector<float> cube_verticies;
@@ -54,9 +57,15 @@ void cell_triagulize_main_loop(){
                 info.add_to_buffer(cube_colors,cube_verticies);
             }
             all_buffer_data.set_vals(cube_colors,cube_verticies);
+#else
+            tri_idx++;
+            string vert_name = "triangles/faces"+to_string(tri_idx)+".vec";
+            ofstream faces(vert_name,ios::binary);
+            faces.write((char*)(draw_info.data()),draw_info.size()*sizeof(draw_info[0]));
+#endif
         }
         if(!cube_update_count.should_render()){
-        //    cube_update_count.spin_sleep();
+            cube_update_count.spin_sleep();
         }
     }
 }
@@ -79,7 +88,11 @@ void cell_update_main_loop(){
     OpenCLExecutor executor("full_cl.cl");
     CLBuffer<QuantityInfo> all_cubes_buf = executor.new_clbuffer<QuantityInfo>(all_cube_size);
     CLBuffer<QuantityInfo> update_buf = executor.new_clbuffer<QuantityInfo>(all_cube_size);
-    CLKernel update_kern = executor.new_clkernel("update_coords",CL_NDRange(size_cube,size_cube,size_cube),{all_cubes_buf.k_arg(),update_buf.k_arg(),});
+
+    CL_NDRange local_range(size_cube,size_cube,size_cube);
+    //CL_NDRange group_range(32,8,8);
+    CL_NDRange exec_range(2,2,2);
+    CLKernel update_kern = executor.new_clkernel("update_coords",local_range,CL_NDRange(),exec_range,{all_cubes_buf.k_arg(),update_buf.k_arg(),});
 
     FrameRateControl cell_automata_update_count(1000.0);
     FrameRateControl update_speed_output_count(1.0);

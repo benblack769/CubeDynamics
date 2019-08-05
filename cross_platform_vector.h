@@ -5,9 +5,9 @@
 #include <iostream>
 
 struct CubeCoord{
-    int x;
-    int y;
-    int z;
+    int16_t x;
+    int16_t y;
+    int16_t z;
 };
 
 inline CubeCoord add_coord(CubeCoord a,CubeCoord b){

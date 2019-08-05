@@ -53,7 +53,7 @@ bool is_transparent(QuantityInfo info){
 QuantityInfo random_init(){
     QuantityInfo data;
     data.air_mass = 0*rand() / float(RAND_MAX);
-    data.liquid_mass = 300*rand() / float(RAND_MAX);
+    data.liquid_mass = 300+rand() / float(RAND_MAX);
     data.solid_mass = 0*rand() / float(RAND_MAX);
     data.vec = zero_vec();
     return data;
@@ -72,13 +72,13 @@ void init_data(QuantityInfo * data){
         *get(data,c) = random_init();
     });*/
 
-    visit_coords_around(CubeCoord{0,0,0},CubeCoord{99,60,99},[&](CubeCoord c){
+    visit_coords_around(CubeCoord{0,0,0},CubeCoord{199,100,199},[&](CubeCoord c){
         *get(data,c) = random_init();
         //get(data,c)->vec = build_vec(50,0,0);
     });
-    visit_coords_around(CubeCoord{35,70,35},CubeCoord{60,99,60},[&](CubeCoord c){
+    visit_coords_around(CubeCoord{85,170,85},CubeCoord{115,199,115},[&](CubeCoord c){
         *get(data,c) = random_init();
-        get(data,c)->vec = build_vec(0,-500,0);
+        get(data,c)->vec = build_vec(0,-1500,0);
     });
 }
 std::vector<QuantityInfo> create_data_vec(){

@@ -129,35 +129,34 @@ public:
     }
 };
 class CL_NDRange{
-private:
+public:
     size_t x;
     size_t y;
     size_t z;
     cl_uint ndim;
-public:
     CL_NDRange(size_t in_x,size_t in_y, size_t in_z){
         x = in_x;
         y = in_y;
         z = in_z;
         ndim = 3;
-        assert(in_x != 0);
-        assert(in_y != 0);
-        assert(in_z != 0);
+        //assert(in_x != 0);
+        //assert(in_y != 0);
+        //assert(in_z != 0);
     }
     CL_NDRange(size_t in_x,size_t in_y){
         x = in_x;
         y = in_y;
         z = -1;
         ndim = 2;
-        assert(in_x != 0);
-        assert(in_y != 0);
+        //assert(in_x != 0);
+        //assert(in_y != 0);
     }
     CL_NDRange(size_t in_x){
         x = in_x;
         y = -1;
         z = -1;
         ndim = 1;
-        assert(in_x != 0);
+        //assert(in_x != 0);
     }
     CL_NDRange(){
         x = -1;
@@ -166,26 +165,35 @@ public:
         ndim = 0;
     }
     size_t * array_view(){
-        assert(ndim != 0);
-        return reinterpret_cast<size_t*>(this);
+        return ndim == 0 ? nullptr : reinterpret_cast<size_t*>(this);
     }
     cl_uint dim(){
         return ndim;
     }
 };
+CL_NDRange div_nd(CL_NDRange range,CL_NDRange divisor){
+    size_t * arr = range.array_view();
+    size_t * div = divisor.array_view();
+    for(int i = 0; i < 3; i++){
+        arr[i] /= div[i];
+    }
+    return range;
+}
 class CLKernel{
 protected:
     cl_command_queue myqueue;
     cl_program program;
     cl_kernel kern;
     CL_NDRange run_range;
-    //CL_NDRange group_range;
-    //CL_NDRange exec_range;
+    CL_NDRange group_range;
+    CL_NDRange exec_range;
 public:
-    CLKernel(cl_program in_prog,cl_command_queue in_queue,const char * kern_name,CL_NDRange in_run_range,std::vector<cl_mem> args){
+    CLKernel(cl_program in_prog,cl_command_queue in_queue,const char * kern_name,CL_NDRange in_run_range,CL_NDRange in_group_range,CL_NDRange in_exec_range,std::vector<cl_mem> args){
         myqueue = in_queue;
         program = in_prog;
         run_range = in_run_range;
+        group_range = in_group_range;
+        exec_range = in_exec_range;
 
         assert(run_range.dim() > 0 && "run_range needs to have at least 1 dimention specified");
 
@@ -203,16 +211,26 @@ public:
     }
     void run(){
         CheckError(clEnqueueBarrier(myqueue));
-        CheckError(clEnqueueNDRangeKernel(
-                       myqueue,
-                       kern,
-                       run_range.dim(),
-                       nullptr,
-                       run_range.array_view(),
-                       nullptr,
-                       0,nullptr,
-                       nullptr
-                       ));
+        int dim = exec_range.dim();
+        CL_NDRange exec_range = dim == 0 ? CL_NDRange(1,1,1) : this->exec_range;
+        CL_NDRange glob_range = div_nd(this->run_range,exec_range);
+        for(int x = 0; x < exec_range.x; x++){
+            for(int y = 0; y < exec_range.y; y++){
+                for(int z = 0; z < exec_range.z; z++){
+                    CL_NDRange global_offset(x*glob_range.x,y*glob_range.y,z*glob_range.z);
+                    CheckError(clEnqueueNDRangeKernel(
+                                   myqueue,
+                                   kern,
+                                   run_range.dim(),
+                                   global_offset.array_view(),
+                                   glob_range.array_view(),
+                                   group_range.array_view(),
+                                   0,nullptr,
+                                   nullptr
+                                   ));
+               }
+           }
+        }
     }
 };
 
@@ -242,8 +260,8 @@ public:
     CLBuffer<item_ty> new_clbuffer(size_t size){
         return CLBuffer<item_ty>(context,queue,size);
     }
-    CLKernel new_clkernel(const char * kern_name,CL_NDRange run_range,std::vector<cl_mem> buflist){
-        return CLKernel(program,queue,kern_name,run_range,buflist);
+    CLKernel new_clkernel(const char * kern_name,CL_NDRange run_range,CL_NDRange in_group_range,CL_NDRange in_exec_range,std::vector<cl_mem> buflist){
+        return CLKernel(program,queue,kern_name,run_range,in_group_range,in_exec_range,buflist);
     }
 
 protected:

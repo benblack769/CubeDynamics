@@ -13,7 +13,7 @@ constexpr int NUM_AXIS = 3;
 struct FaceInfo{
     CubeCoord base_coord;
     bool reversed;
-    int _axis;
+    int8_t _axis;
     int num_verticies_to_buffer(){
         return 2*3;
     }
