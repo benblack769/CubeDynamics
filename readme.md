@@ -2,19 +2,19 @@
 
 This is a fluid dynamics simulator that accounts for interesting features like  surface tension.
 
-You can watch a [youtube video](http://www.youtube.com/watch?v=RqMoEc-gecs) of its progress by clicking on the image.
+You can watch a [youtube video](https://www.youtube.com/watch?v=fHrjmD4jiyo&list=PLLj754xq5BbXKl2xm3q2dSw7Lq3_PYI7z&index=1) of its progress by clicking on the image.
 
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/RqMoEc-gecs/0.jpg)](http://www.youtube.com/watch?v=RqMoEc-gecs "Gif animation")
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/RqMoEc-gecs/0.jpg)](https://www.youtube.com/watch?v=RqMoEc-gecs&list=PLLj754xq5BbXKl2xm3q2dSw7Lq3_PYI7z&index=6 "Gif animation")
 
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/-pC6vQY5TzY/0.jpg)](http://www.youtube.com/watch?v=-pC6vQY5TzY "Gif animation")
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/-pC6vQY5TzY/0.jpg)](https://www.youtube.com/watch?v=-pC6vQY5TzY&list=PLLj754xq5BbXKl2xm3q2dSw7Lq3_PYI7z&index=5 "Gif animation")
 
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/fHrjmD4jiyo/0.jpg)](http://www.youtube.com/watch?v=fHrjmD4jiyo "Gif animation")
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/fHrjmD4jiyo/0.jpg)](https://www.youtube.com/watch?v=fHrjmD4jiyo&list=PLLj754xq5BbXKl2xm3q2dSw7Lq3_PYI7z&index=1 "Gif animation")
 
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/-pC6vQY5TzY/0.jpg)](http://www.youtube.com/watch?v=-pC6vQY5TzY "Gif animation")
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/XbsjbVZa6MI/0.jpg)](https://www.youtube.com/watch?v=XbsjbVZa6MI&list=PLLj754xq5BbXKl2xm3q2dSw7Lq3_PYI7z&index=2 "Gif animation")
 
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/wDq-A0i26o0/0.jpg)](http://www.youtube.com/watch?v=wDq-A0i26o0 "Gif animation")
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/wDq-A0i26o0/0.jpg)](https://www.youtube.com/watch?v=wDq-A0i26o0&list=PLLj754xq5BbXKl2xm3q2dSw7Lq3_PYI7z&index=4 "Gif animation")
 
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/dSMJzG9Sqgo/0.jpg)](http://www.youtube.com/watch?v=dSMJzG9Sqgo "Gif animation")
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/dSMJzG9Sqgo/0.jpg)](https://www.youtube.com/watch?v=dSMJzG9Sqgo&list=PLLj754xq5BbXKl2xm3q2dSw7Lq3_PYI7z&index=3 "Gif animation")
 
 
 ### Formula
