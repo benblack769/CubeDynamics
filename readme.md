@@ -1,6 +1,6 @@
 ## CubeDynamics
 
-This is a fluid dynamics simulator that accounts for interesting features like  surface tension.
+This is a fluid dynamics simulator that accounts for interesting features like  surface tension. A writeup on the inspiration for the project is [here](https://benblack769.github.io/posts/blog/on_simulation/).
 
 You can watch a [youtube video](https://www.youtube.com/watch?v=fHrjmD4jiyo&list=PLLj754xq5BbXKl2xm3q2dSw7Lq3_PYI7z&index=1) of its progress by clicking on the image.
 
